@@ -1,7 +1,9 @@
-import {Container, ContainerInfo, ContainerInspectInfo} from 'dockerode';
+import * as Joi from '@hapi/Joi';
+import {ContainerInspectInfo} from 'dockerode';
 import {IBackupSource} from './IBackupSource';
-import {ILabels} from './Labels';
-import {extractLabels, getConfigFromLabel, getEnvFromContainer, getHostForContainer} from './Util';
+import {ILabels} from './Interfaces';
+import {extractLabels, getConfigFromLabel, getHostForContainer} from './Util';
+import {ValidationError} from './ValidationError';
 
 export interface IMysqlLabels extends ILabels {
   mysql: {
@@ -19,8 +21,33 @@ export interface IMysqlLabels extends ILabels {
  */
 export class BackupSourceMysql implements IBackupSource {
 
+  public static getSchema(): any {
+
+    return Joi.object().keys({
+      database: Joi.string().required(),
+      options: Joi.string(),
+      password: Joi.string().required(),
+      tableBlackList: Joi.string(),
+      tableWhiteList: Joi.string(),
+      user: Joi.string().required(),
+    });
+  }
+
   public static fromContainer(container: ContainerInspectInfo): BackupSourceMysql {
     const labels: IMysqlLabels = extractLabels(container.Config.Labels) as IMysqlLabels;
+    console.debug(labels);
+
+    if (!labels.hasOwnProperty('mysql')) {
+      throw new Error('No mysql property found');
+    }
+
+    const result = Joi.validate(labels.mysql, this.getSchema());
+    if (result.error !== null) {
+      for (const error of result.error.details) {
+        console.log(`Container ${container.Name}: Validation for mysql ${error.message}`);
+      }
+      throw new ValidationError('Validation failed', result.error);
+    }
 
     const mysqlUser = getConfigFromLabel(labels.mysql.user, container, 'root');
 

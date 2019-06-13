@@ -1,7 +1,7 @@
 import {ContainerInspectInfo} from 'dockerode';
 import {object} from 'dot-object';
 import {IMysqlLabels} from './BackupSourceMysql';
-import {ILabels} from './Labels';
+import {ILabels} from './Interfaces';
 
 /**
  * Extract the labels beginning with `backer` and convert the dotted keys to nested objects

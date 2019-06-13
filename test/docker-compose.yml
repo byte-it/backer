@@ -1,0 +1,13 @@
+version: '3'
+services:
+  db:
+    image: mariadb:latest
+    labels:
+    - 'backer.type=mysql'
+    - 'backer.network=test_default'
+    - 'backer.mysql.user=Text:root'
+    - 'backer.mysql.password=Env:MYSQL_ROOT_PASSWORD'
+    - 'backer.mysql.database=Env:MYSQL_DATABASE'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
