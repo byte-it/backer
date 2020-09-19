@@ -8,6 +8,7 @@ import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource} from './IBackupSource';
 import {exec} from 'child_process';
+import {Logger} from 'winston';
 
 export interface IMysqlLabels extends ILabels {
     mysql: {
@@ -38,7 +39,14 @@ export class BackupSourceMysql implements IBackupSource {
     }
 
     public static fromContainer(inspectInfo: ContainerInspectInfo): BackupSourceMysql {
+        const logger = container.resolve<Logger>('Logger');
         const labels: IMysqlLabels = extractLabels(inspectInfo.Config.Labels) as IMysqlLabels;
+        const containerName = inspectInfo.Name.replace('/', '');
+
+        const defaultLogMeta = {
+            containerName,
+            containerId: inspectInfo.Id,
+        };
 
         if (!labels.hasOwnProperty('mysql')) {
             throw new Error('No mysql property found');
@@ -47,7 +55,11 @@ export class BackupSourceMysql implements IBackupSource {
         const result =  this.getSchema().validate(labels.mysql);
         if (result.hasOwnProperty('error')) {
             for (const error of result.error.details) {
-                console.log(`Container ${inspectInfo.Name}: Validation for mysql ${error.message}`);
+                logger.log({
+                    level: 'error',
+                    message: `Container ${containerName}: Validation for mysql ${error.message}`,
+                    ...defaultLogMeta,
+                });
             }
             throw new ValidationError('Validation failed', result.error);
         }
@@ -55,7 +67,7 @@ export class BackupSourceMysql implements IBackupSource {
         const mysqlUser = getConfigFromLabel(labels.mysql.user, inspectInfo, 'root');
 
         if (mysqlUser === '') {
-            throw new Error(`Container ${inspectInfo.Name}: No mysql user found!`);
+            throw new Error(`Container ${containerName}: No mysql user found!`);
         }
 
         const mysqlPassword = getConfigFromLabel(labels.mysql.user, inspectInfo);
@@ -80,11 +92,19 @@ export class BackupSourceMysql implements IBackupSource {
             tableIncludeList !== null &&
             tableIgnoreList !== null
         ) {
-            console.warn(`Container ${inspectInfo.Name}: Found ignore & include list, the ignorelist is preferred!`);
+            logger.log({
+                level: 'warning',
+                message: `Container ${containerName}: Found ignore & include list, the ignorelist is preferred!`,
+                ...defaultLogMeta,
+        });
             tableIncludeList = null;
         }
         if (Array.isArray(db) && Array.isArray(tableIncludeList)) {
-            console.warn(`Container ${inspectInfo.Name}: Found include list & multiple databases, the include list will be ignored`);
+            logger.log({
+                level: 'warning',
+                message: `Container ${containerName}: Found include list & multiple databases, the include list will be ignored`,
+                ...defaultLogMeta,
+            });
         }
 
         const host = getHostForContainer(labels.network, inspectInfo);
@@ -194,6 +214,8 @@ export class BackupSourceMysql implements IBackupSource {
      * Generate the dump command for `mysqldump`
      * {@link https://linux.die.net/man/1/mysqldump}
      * @param name
+     *
+     * @todo move secrets to env vars
      */
     public createDumpCmd(name: string) {
         let cmd = `mysqldump --host="${this._dbHost}" --user="${this._dbUser}" --password="${this._dbPassword}"`;
@@ -226,7 +248,6 @@ export class BackupSourceMysql implements IBackupSource {
             }
         }
         const tmpPath = container.resolve(Config).get('tmpPath');
-        console.log(tmpPath);
         const tmpFile = path.join(tmpPath, name);
         cmd += ` > ${tmpFile}`;
 

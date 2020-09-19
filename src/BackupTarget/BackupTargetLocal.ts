@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as makeDir from 'make-dir';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
+import {inject, injectable} from 'tsyringe';
+import {Logger} from 'winston';
 import {IBackupManifest} from '../IBackupManifest';
 import {IBackupManifestBackup} from '../IBackupManifest';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
@@ -19,6 +21,7 @@ export interface IBackupTargetLocalConfig extends IBackupTargetConfig {
 /**
  * The BackupTargetLocal saves the backups to a destination in the local filesystem.
  */
+@injectable()
 export class BackupTargetLocal implements IBackupTarget {
 
     get backupDir(): string {
@@ -36,9 +39,10 @@ export class BackupTargetLocal implements IBackupTarget {
     private readonly _manifest: IBackupManifest;
 
     /**
+     * @param logger
      * @param config
      */
-    constructor(config: IBackupTargetLocalConfig) {
+    constructor(@inject('Logger') private logger: Logger, config: IBackupTargetLocalConfig) {
 
         if (Path.isAbsolute(config.dir)) {
             this._backupDir = String().replace(/\/+$/, '');
@@ -60,7 +64,12 @@ export class BackupTargetLocal implements IBackupTarget {
                     this._manifest = JSON.parse(readManifest) as IBackupManifest;
                 }
             } else {
-                console.log(`BackupTarget ${config.name}: The configured directory doesn't include a manifest file, a new one will be created`);
+                this.logger.log({
+                    level: 'info',
+                    message: `BackupTarget ${config.name}: The configured directory doesn't include a manifest file, a new one will be created`,
+                    targetName: config.name,
+                    targetType: config.type,
+                });
 
                 this._manifest = {
                     backups: [],
@@ -73,7 +82,12 @@ export class BackupTargetLocal implements IBackupTarget {
                 this.writeManifest();
             }
         } else {
-            console.warn(`BackupTarget ${config.name}: The configured directory doesn't exist.`);
+            this.logger.log({
+                level: 'error',
+                message: `BackupTarget ${config.name}: The configured directory doesn't exist.`,
+                targetName: config.name,
+                targetType: config.type,
+            });
             throw new Error('Dir does nit exist');
         }
     }

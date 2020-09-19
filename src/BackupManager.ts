@@ -1,5 +1,6 @@
 import * as Dockerode from 'dockerode';
 import {inject, singleton} from 'tsyringe';
+import {Logger} from 'winston';
 import {Backup} from './Backup/Backup';
 import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 
@@ -18,7 +19,7 @@ export class BackupManager {
   /**
    *
    */
-  constructor(@inject(Dockerode) private docker: Dockerode) {
+  constructor(@inject(Dockerode) private docker: Dockerode, @inject('Logger') private logger: Logger) {
     this._backups = {};
   }
 
@@ -30,7 +31,7 @@ export class BackupManager {
         this.addBackup(backup);
         return Promise.resolve<Backup>(backup);
       } catch (error) {
-        console.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
+        this.logger.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
         return Promise.reject(error.message);
       }
     }
@@ -59,7 +60,7 @@ export class BackupManager {
    */
   public stopBackup(containerId: string): void {
     if (this._backups[containerId]) {
-      console.log(`Container ${this._backups[containerId].containerName}: Stop backup`);
+      this.logger.info(`Container ${this._backups[containerId].containerName}: Stop backup`);
       this._backups[containerId].stop();
       delete this._backups[containerId];
     }
@@ -71,7 +72,7 @@ export class BackupManager {
    * docker event stream for started/stopped containers
    */
   public async init(): Promise<void> {
-    console.log('Read already started container');
+    this.logger.info('Read already started container');
     const containers = await this.docker.listContainers();
     for (const container of containers) {
       if (container.Labels['backer.type']) {
@@ -81,10 +82,10 @@ export class BackupManager {
       }
     }
 
-    console.log('Start monitoring docker events');
+    this.logger.info('Start monitoring docker events');
     this.docker.getEvents({}, (err, data) => {
       if (err) {
-        console.log(err);
+        this.logger.error(err);
       } else {
         data.on('data', (buffer: Buffer) => {
           let event: IDockerEvent = JSON.parse(buffer.toString('utf-8'));

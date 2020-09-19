@@ -1,11 +1,23 @@
 import * as Dockerode from 'dockerode';
-
 import 'reflect-metadata';
+import {container} from 'tsyringe';
+import * as winston from 'winston';
+import {Logger} from 'winston';
 import {BackupManager} from './BackupManager';
 import {Config} from './Config';
-import {container} from 'tsyringe';
 
-console.log('Start backer');
+const logger = winston.createLogger({
+    transports: [
+        new winston.transports.Console(),
+    ],
+});
+
+logger.info('Start backer');
+
+container.registerInstance<Logger>(
+    'Logger',
+    logger,
+);
 
 container.registerInstance<Dockerode>(
     Dockerode,

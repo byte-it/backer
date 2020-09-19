@@ -1,0 +1,4 @@
+require: "reflect-metadata"
+spec: 'src/**/*.spec.ts'
+file:
+- test/mocha-setup.ts

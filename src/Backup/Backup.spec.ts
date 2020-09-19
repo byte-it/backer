@@ -1,6 +1,10 @@
 import {expect} from 'chai';
 import {Backup} from './Backup';
 import moment = require('moment');
+import {container} from 'tsyringe';
+import {createLogger, Logger, transports} from 'winston';
+import {Config} from '../Config';
+
 
 describe('Backup', () => {
     describe('#fromContainer()', () => {
@@ -95,12 +99,17 @@ describe('Backup', () => {
             const pattern = '<DATE>-<CONTAINER_NAME>';
             const date = moment();
 
-            // @ts-ignore
-            const backup = new Backup(containerId, containerName, {
-                getFileSuffix() {
-                    return '.sql';
-                },
-            }, null, '0 0 * * *', '0', pattern);
+            const backup = new Backup(
+                container.resolve(Config),
+                container.resolve('Logger'),
+                containerId,
+                containerName,
+                // @ts-ignore
+                {
+                    getFileSuffix() {
+                        return '.sql';
+                    },
+                }, null, '0 0 * * *', '0', pattern);
             const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}.sql`;
             expect(backup.createName(date)).to.equal(expectedName);
         });

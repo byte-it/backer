@@ -1,7 +1,7 @@
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as moment from 'moment';
-import {container} from 'tsyringe';
+import {container, inject, injectable} from 'tsyringe';
 import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
@@ -13,10 +13,13 @@ import {TargetJob} from '../Queue/TargetJob';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
 import * as Joi from 'joi';
+import {Config} from '../Config';
+import {Logger, LogEntry} from 'winston';
 
 /**
  * Backup represents a backup for one container. It manages the source and the target
  */
+@injectable()
 export class Backup {
 
     get containerName(): string {
@@ -66,9 +69,19 @@ export class Backup {
      * @return Backup
      */
     public static fromContainer(inspectInfo: ContainerInspectInfo): Backup {
+        const logger: Logger = container.resolve<Logger>('Logger');
         const containerName = inspectInfo.Name.replace('/', '');
 
-        console.log(`Container ${containerName}: Create backup`);
+        const defaultLogMeta = {
+            containerName,
+            containerId: inspectInfo.Id,
+        };
+
+        logger.log({
+            level: 'info',
+            message: `Container ${containerName}: Create backup`,
+            ...defaultLogMeta,
+        });
 
         const sourceProvider = container.resolve<BackupSourceProvider>(BackupSourceProvider);
         const targetProvider = container.resolve<BackupTargetProvider>(BackupTargetProvider);
@@ -87,27 +100,46 @@ export class Backup {
 
         if (result.hasOwnProperty('error')) {
             for (const error of result.error.details) {
-                console.log(`Container ${containerName}: ${error.message}`);
+                logger.log({
+                    level: 'error',
+                    message: `Container ${containerName}: ${error.message}`,
+                    ...defaultLogMeta,
+                });
             }
             throw new ValidationError('Validation failed', result.error);
         }
 
         let target: IBackupTarget;
         if (labels.target && labels.target !== '') {
-            console.log(`Container ${containerName}: Use "${labels.target}" as target`);
+            logger.log({
+                level: 'info',
+                message: `Container ${containerName}: Use "${labels.target}" as target`,
+                ...defaultLogMeta,
+            });
             target = targetProvider.getBackupTarget(labels.target);
             if (target == null) {
                 throw new Error(`Container ${containerName}: Validation: The target "${labels.target}" doesn't exist`);
             }
         } else {
-            console.log(`Container ${containerName}: Use default target`);
+            logger.log({
+                level: 'info',
+                message: `Container ${containerName}: Use default target`,
+                ...defaultLogMeta,
+            });
             target = targetProvider.getDefaultBackupTarget();
         }
 
         const source = sourceProvider.createBackupSource(inspectInfo);
 
-        console.log(`Container ${containerName}: Created backup`);
+        logger.log({
+            level: 'info',
+            message: `Container ${containerName}: Created backup`,
+            ...defaultLogMeta,
+        });
+
         return new Backup(
+            container.resolve(Config),
+            container.resolve('Logger'),
             inspectInfo.Id,
             containerName,
             source,
@@ -160,6 +192,8 @@ export class Backup {
     private _cron: CronJob;
 
     /**
+     * @param config
+     * @param logger
      * @param containerId
      * @param containerName
      * @param source
@@ -169,13 +203,16 @@ export class Backup {
      * @param namePattern
      */
     constructor(
+        @inject(Config) private config: Config,
+        @inject('Logger') private logger: Logger,
         containerId: string,
         containerName: string,
         source: IBackupSource,
         target: IBackupTarget,
         interval: string,
         retention: string,
-        namePattern: string) {
+        namePattern: string,
+    ) {
         this._containerId = containerId;
         this._containerName = containerName;
         this._source = source;
@@ -224,8 +261,14 @@ export class Backup {
      * @param log
      * @protected
      */
-    protected log(log: string) {
-        console.log(`Backup ${this.containerName} ${this.containerId}: ${log}`);
+    protected log(log: string | LogEntry) {
+        if (typeof log === 'string') {
+            this.logger.info(log, this.containerId, this.containerName);
+        } else {
+            log.containerId = this.containerId;
+            log.containerName = this.containerName;
+            this.logger.log(log);
+        }
     }
 
     /**
@@ -248,15 +291,24 @@ export class Backup {
         try {
             await queue.enqueue(new SourceJob(this._source, backupName, manifest));
         } catch (e) {
-            this.log('Backup creation error out');
-            console.error(e);
+            this.log({
+                level: 'error',
+                message: 'Backup source encountered an error',
+                error: e,
+                backupName,
+            });
             return;
         }
         this.log(`Backup ${backupName} created`);
         try {
             await queue.enqueue(new TargetJob(this._target, backupName, manifest));
         } catch (e) {
-            this.log('Backup storage errored out');
+            this.log({
+                level: 'error',
+                message: 'Backup target encountered an error',
+                error: e,
+                backupName,
+            });
         }
 
         this.log(`Backup ${backupName} transferred to target`);
