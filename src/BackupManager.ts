@@ -1,19 +1,25 @@
 import * as Dockerode from 'dockerode';
-import {Backup} from './Backup';
+import {inject, singleton} from 'tsyringe';
+import {Backup} from './Backup/Backup';
 import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 
+/**
+ * BackupManager is responsible for the bookkeeping of all active backups.
+ * It scans the docker daemon for all running and configured containers and reacts docker's container events.
+ */
+@singleton()
 export class BackupManager {
 
   /**
    *
    */
-  private readonly backups: { [containerId: string]: Backup };
+  private readonly _backups: { [containerId: string]: Backup };
 
   /**
    *
    */
-  constructor(private docker: Dockerode) {
-    this.backups = {};
+  constructor(@inject(Dockerode) private docker: Dockerode) {
+    this._backups = {};
   }
 
   public async createBackup(containerId: string): Promise<Backup> {
@@ -36,7 +42,7 @@ export class BackupManager {
    * @param backup
    */
   public addBackup(backup: Backup): void {
-    this.backups[backup.containerId] = backup;
+    this._backups[backup.containerId] = backup;
   }
 
   /**
@@ -44,7 +50,7 @@ export class BackupManager {
    * @param containerId
    */
   public getBackup(containerId: string): Backup {
-    return this.backups[containerId];
+    return this._backups[containerId];
   }
 
   /**
@@ -52,10 +58,10 @@ export class BackupManager {
    * @param containerId
    */
   public stopBackup(containerId: string): void {
-    if (this.backups[containerId]) {
-      console.log(`Container ${this.backups[containerId].containerName}: Stop backup`);
-      this.backups[containerId].stop();
-      delete this.backups[containerId];
+    if (this._backups[containerId]) {
+      console.log(`Container ${this._backups[containerId].containerName}: Stop backup`);
+      this._backups[containerId].stop();
+      delete this._backups[containerId];
     }
   }
 

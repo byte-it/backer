@@ -1,9 +1,16 @@
 version: '3'
 services:
+  backer:
+    build:
+      context: ../.
+      dockerfile: Dockerfile
+    volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock"
   db:
     image: mariadb:latest
     labels:
     - 'backer.type=mysql'
+    - 'backer.interval=* * * * *'
     - 'backer.network=test_default'
     - 'backer.mysql.user=Text:root'
     - 'backer.mysql.password=Env:MYSQL_ROOT_PASSWORD'

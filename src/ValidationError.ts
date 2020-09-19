@@ -1,4 +1,4 @@
-import {ValidationError as JoiValidationError} from '@hapi/joi';
+import {ValidationError as JoiValidationError} from 'joi';
 
 export class ValidationError extends Error {
 

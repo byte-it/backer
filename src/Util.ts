@@ -1,6 +1,6 @@
 import {ContainerInspectInfo} from 'dockerode';
 import {object} from 'dot-object';
-import {IMysqlLabels} from './BackupSourceMysql';
+import {IMysqlLabels} from './BackupSource/BackupSourceMysql';
 import {ILabels} from './Interfaces';
 
 /**
@@ -8,12 +8,19 @@ import {ILabels} from './Interfaces';
  * @param labels
  */
 export const extractLabels = (labels: { [propName: string]: any; }): ILabels | IMysqlLabels => {
-  // Convert all doted keys to
-  const clonedLabels = Object.assign({}, labels);
-  object(clonedLabels);
-  return clonedLabels.hasOwnProperty('backer') ?
-    clonedLabels.backer :
-    {};
+    // Convert all doted keys to
+    const clonedLabels = {};
+    for (const key in labels) {
+        if (key.startsWith('backer')) {
+            clonedLabels[key] = labels[key];
+        }
+
+    }
+    object(clonedLabels);
+    return clonedLabels.hasOwnProperty('backer') ?
+        // @ts-ignore
+        clonedLabels['backer'] :
+        {};
 };
 
 /**
@@ -24,15 +31,15 @@ export const extractLabels = (labels: { [propName: string]: any; }): ILabels | I
  * @throws Error If the env isn't defined on the container
  */
 export const getEnvFromContainer = (env: string, container: ContainerInspectInfo) => {
-  const envVars = {};
-  for (const envVar of container.Config.Env) {
-    const name = envVar.substr(0, envVar.indexOf('='));
-    envVars[name] = envVar.substr(envVar.indexOf('=') + 1).replace(/"/g, '');
-  }
-  if (!(envVars[env])) {
-    throw new Error(`Container ${container.Name}: Can't find ENV ${env}`);
-  }
-  return envVars[env];
+    const envVars = {};
+    for (const envVar of container.Config.Env) {
+        const name = envVar.substr(0, envVar.indexOf('='));
+        envVars[name] = envVar.substr(envVar.indexOf('=') + 1).replace(/"/g, '');
+    }
+    if (!(envVars[env])) {
+        throw new Error(`Container ${container.Name}: Can't find ENV ${env}`);
+    }
+    return envVars[env];
 };
 
 /**
@@ -43,18 +50,18 @@ export const getEnvFromContainer = (env: string, container: ContainerInspectInfo
  */
 
 export function getConfigFromLabel(
-  label: string,
-  container: ContainerInspectInfo,
-  defaultValue?: string,
+    label: string,
+    container: ContainerInspectInfo,
+    defaultValue?: string,
 ): string {
-  if (label.startsWith('Env:')) {
-      return getEnvFromContainer(label.substr(4), container);
-  } else if (label.startsWith('Text:')) {
-    return label.substr(5);
-  } else if (defaultValue) {
-    return defaultValue;
-  }
-  return '';
+    if (label.startsWith('Env:')) {
+        return getEnvFromContainer(label.substr(4), container);
+    } else if (label.startsWith('Text:')) {
+        return label.substr(5);
+    } else if (defaultValue) {
+        return defaultValue;
+    }
+    return '';
 }
 
 /**
@@ -65,9 +72,9 @@ export function getConfigFromLabel(
  * @throws Error Thrown if the network isn't found on the container
  */
 export function getHostForContainer(network: string, container: ContainerInspectInfo): string {
-  if (container.NetworkSettings.Networks[network]) {
-    return container.NetworkSettings.Networks[network].IPAddress;
-  } else {
-    throw new Error(`Network ${network} not found on container ${container.Name}`);
-  }
+    if (container.NetworkSettings.Networks[network]) {
+        return container.NetworkSettings.Networks[network].IPAddress;
+    } else {
+        throw new Error(`Network ${network} not found on container ${container.Name}`);
+    }
 }

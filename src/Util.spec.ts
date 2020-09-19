@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {extractLabels, getConfigFromLabel, getHostForContainer} from './Util';
 
 describe('Util', () => {
-  describe('extractLabels', () => {
+  describe('#extractLabels()', () => {
     it('should return an empty object if the KEY is missing', () => {
       const testLabels = {
         test: '',
@@ -35,7 +35,7 @@ describe('Util', () => {
       });
     });
   });
-  describe('getHostForContainer', () => {
+  describe('#getHostForContainer()', () => {
     it('should throw an error if the host isn\'t in the given network', () => {
       const container = {
           NetworkSettings: {
@@ -62,7 +62,7 @@ describe('Util', () => {
       expect(host).to.equal('test');
     });
   });
-  describe('getConfigFromLabel', () => {
+  describe('#getConfigFromLabel()', () => {
     it('should return the value without the \'Text:\' prefix', () => {
       expect(getConfigFromLabel('Text:test', null)).to.equal('test');
     });

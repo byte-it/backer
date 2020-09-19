@@ -10,6 +10,11 @@ export interface IBackupSource {
   readonly name: string;
 
   /**
+   * Returns the ending of the file created by this backup source. (F.e. `.sql.tar` or `.dump`)
+   */
+  getFileSuffix(): string;
+
+  /**
    *
    * @param name
    */

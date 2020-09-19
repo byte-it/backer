@@ -89,4 +89,8 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
+
+# Custom ignores for this project
 dist/
+.tmp
+tmp
