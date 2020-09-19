@@ -25,15 +25,20 @@ export class BackupTargetProvider {
 
         for (const target of config.get('targets') as IBackupTargetConfig[]) {
             try {
+                let instance: IBackupTarget;
                 switch (target.type) {
                     case 'local':
-                        const instance = BackupTargetLocal.createInstance((target as IBackupTargetLocalConfig));
-                        container.registerInstance(['target', target.name].join('.'), instance);
+                        instance = BackupTargetLocal.createInstance((target as IBackupTargetLocalConfig));
                         break;
                     default:
                         throw new Error(`Target ${target.type} not found.`);
                 }
-            } catch (e) {}
+                container.registerInstance(['target', target.name].join('.'), instance);
+                if (target.default === true) {
+                    container.registerInstance(['target', 'default'].join('.'), instance);
+                }
+            } catch (e) {
+            }
 
         }
     }

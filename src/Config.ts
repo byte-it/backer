@@ -19,6 +19,7 @@ export class Config {
                     name: 'default',
                     type: 'local',
                     dir: './.tmp/targets/local',
+                    default: true,
                 },
             ],
         };

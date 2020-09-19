@@ -13,6 +13,7 @@ import {IBackupManifestBackup} from '../IBackupManifest';
 export interface IBackupTargetConfig {
     type: string;
     name: string;
+    default?: boolean;
 }
 
 export interface IBackupTarget {

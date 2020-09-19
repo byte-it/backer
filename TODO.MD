@@ -2,7 +2,7 @@
 
 ## Basic features
 - [x] Implement basic cron handling
-- [ ] Implement backup tasks (dump & copying to target in job queue)
+- [x] Implement backup tasks (dump & copying to target in job queue)
 - [ ] Implement s3 target
 - [ ] Implement mysql source
 - [ ] Implement postgres source
@@ -14,6 +14,7 @@
 - [ ] static configured targets
 - [ ] replace moment
 - [ ] Static pre configuration for sources
+- [ ] Implement queue locking per source
 
 ## Nice to have
 - [ ] REST-API
@@ -21,6 +22,6 @@
 - [ ] Custom compression
 - [ ] Encryption
 - [ ] Rollback 
-- [ ] ROllback tests
+- [ ] Rollback tests
 - [ ] Integrity checks (File hash)
 - [ ] Job queue priority
