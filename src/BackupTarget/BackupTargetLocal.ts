@@ -2,11 +2,12 @@ import * as fs from 'fs';
 import * as makeDir from 'make-dir';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
-import {inject, injectable} from 'tsyringe';
+import {container, inject, registry} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupManifest} from '../IBackupManifest';
-import {IBackupManifestBackup} from '../IBackupManifest';
+import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
+import Lifecycle from 'tsyringe/dist/typings/types/lifecycle';
+import {Config} from '../Config';
 
 /**
  * The configuration of the BackupTargetLocal.
@@ -21,8 +22,18 @@ export interface IBackupTargetLocalConfig extends IBackupTargetConfig {
 /**
  * The BackupTargetLocal saves the backups to a destination in the local filesystem.
  */
-@injectable()
+@registry([{
+    token: 'target.local',
+    useClass: BackupTargetLocal,
+}])
 export class BackupTargetLocal implements IBackupTarget {
+
+    public static createInstance(config: IBackupTargetLocalConfig): BackupTargetLocal {
+        return new BackupTargetLocal(
+            container.resolve('Logger'),
+            config,
+        );
+    }
 
     get backupDir(): string {
         return this._backupDir;
@@ -47,7 +58,7 @@ export class BackupTargetLocal implements IBackupTarget {
         if (Path.isAbsolute(config.dir)) {
             this._backupDir = String().replace(/\/+$/, '');
         } else {
-            this._backupDir =  String().replace(/\/+$/, '');
+            this._backupDir = String().replace(/\/+$/, '');
         }
         const calculatedPath = Path.isAbsolute(config.dir) ?
             Path.normalize(config.dir) :
@@ -84,7 +95,7 @@ export class BackupTargetLocal implements IBackupTarget {
         } else {
             this.logger.log({
                 level: 'error',
-                message: `BackupTarget ${config.name}: The configured directory doesn't exist.`,
+                message: `BackupTarget ${config.name}: The directory ${this._backupDir} doesn't exist.`,
                 targetName: config.name,
                 targetType: config.type,
             });

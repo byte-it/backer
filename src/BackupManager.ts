@@ -3,6 +3,7 @@ import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
 import {Backup} from './Backup/Backup';
 import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
+import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 
 /**
  * BackupManager is responsible for the bookkeeping of all active backups.
@@ -19,7 +20,11 @@ export class BackupManager {
   /**
    *
    */
-  constructor(@inject(Dockerode) private docker: Dockerode, @inject('Logger') private logger: Logger) {
+  constructor(
+      @inject(Dockerode) private docker: Dockerode,
+      @inject('Logger') private logger: Logger,
+      @inject(BackupTargetProvider) private targetProvider: BackupTargetProvider,
+  ) {
     this._backups = {};
   }
 

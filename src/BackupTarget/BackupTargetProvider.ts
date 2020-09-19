@@ -1,6 +1,9 @@
-import {inject, singleton} from 'tsyringe';
+import {container, DependencyContainer, inject, singleton} from 'tsyringe';
+import {Logger} from 'winston';
 import {Config} from '../Config';
-import {IBackupTarget} from './IBackupTarget';
+import './BackupTargetLocal';
+import {BackupTargetLocal, IBackupTargetLocalConfig} from './BackupTargetLocal';
+import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 
 /**
  * The BackupTargetProvider manages all available and configured BackupTargets.
@@ -10,35 +13,44 @@ import {IBackupTarget} from './IBackupTarget';
 @singleton()
 export class BackupTargetProvider {
 
-  private readonly _config: Config;
+    private readonly _config: Config;
 
-  /**
-   * The default target to use when none is specified
-   */
-  private _defaultTarget: IBackupTarget;
+    /**
+     * The default target to use when none is specified
+     */
+    private _defaultTarget: IBackupTarget;
 
-  /**
-   * The list of all registered targets
-   */
-  private targets: { [key: string]: IBackupTarget };
+    constructor(@inject(Config) config: Config, @inject('Logger') private logger: Logger) {
+        this._config = config;
 
-  constructor(@inject(Config) config) {
-    this._config = config;
-  }
+        for (const target of config.get('targets') as IBackupTargetConfig[]) {
+            try {
+                switch (target.type) {
+                    case 'local':
+                        const instance = BackupTargetLocal.createInstance((target as IBackupTargetLocalConfig));
+                        container.registerInstance(['target', target.name].join('.'), instance);
+                        break;
+                    default:
+                        throw new Error(`Target ${target.type} not found.`);
+                }
+            } catch (e) {}
 
-  /**
-   * Returns the default backup target
-   * @return IBackupTarget
-   */
-  public getDefaultBackupTarget(): IBackupTarget {
-    return this._defaultTarget;
-  }
+        }
+    }
 
-  /**
-   * Returns the named target or null if the target name doesn't exist
-   * @param name
-   */
-  public getBackupTarget(name: string): IBackupTarget|null {
-    return null;
-  }
+    /**
+     * Returns the default backup target
+     * @return IBackupTarget
+     */
+    public getDefaultBackupTarget(): IBackupTarget {
+        return this._defaultTarget;
+    }
+
+    /**
+     * Returns the named target or null if the target name doesn't exist
+     * @param name
+     */
+    public getBackupTarget(name: string): IBackupTarget | null {
+        return null;
+    }
 }
