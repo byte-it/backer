@@ -116,7 +116,7 @@ export class Backup {
                 message: `Container ${containerName}: Use "${labels.target}" as target`,
                 ...defaultLogMeta,
             });
-            target = targetProvider.getBackupTarget(labels.target);
+            target = container.resolve<IBackupTarget>(['target', labels.target].join('.'));
             if (target == null) {
                 throw new Error(`Container ${containerName}: Validation: The target "${labels.target}" doesn't exist`);
             }
@@ -126,7 +126,7 @@ export class Backup {
                 message: `Container ${containerName}: Use default target`,
                 ...defaultLogMeta,
             });
-            target = targetProvider.getDefaultBackupTarget();
+            target = container.resolve<IBackupTarget>('target.default');
         }
 
         const source = sourceProvider.createBackupSource(inspectInfo);
