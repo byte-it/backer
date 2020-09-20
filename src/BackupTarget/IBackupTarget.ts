@@ -18,6 +18,7 @@ export interface IBackupTargetConfig {
 
 export interface IBackupTarget {
 
+    readonly name: string;
     /**
      * List all backups on the remote
      */

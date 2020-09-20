@@ -191,6 +191,8 @@ export class Backup {
      */
     private _cron: CronJob;
 
+    private _defaultMeta: object;
+
     /**
      * @param config
      * @param logger
@@ -220,6 +222,11 @@ export class Backup {
         this._interval = interval;
         this._retention = retention;
         this._namePattern = namePattern;
+
+        this._defaultMeta = {
+            containerId: this._containerId,
+            containerName: this._containerName,
+        };
 
         this._cron = new CronJob(this._interval, this.backup.bind(this));
         this._cron.start();
@@ -277,7 +284,18 @@ export class Backup {
     private async backup() {
         const backupName = this.createName();
 
-        this.log(`Backup ${backupName} started`);
+        const backupMeta = {
+            ... this._defaultMeta,
+            backupName,
+            sourceName: this._source.name,
+            targetName: this._target.name,
+        };
+
+        this.log({
+            level: 'info',
+            message: `Backup ${backupName} started`,
+            ...backupMeta,
+        });
 
         const manifest: IBackupManifestBackup = {
             name: backupName,
@@ -294,8 +312,8 @@ export class Backup {
             this.log({
                 level: 'error',
                 message: 'Backup source encountered an error',
-                error: e,
-                backupName,
+                error: e.message,
+                ...backupMeta,
             });
             return;
         }
@@ -307,7 +325,7 @@ export class Backup {
                 level: 'error',
                 message: 'Backup target encountered an error',
                 error: e,
-                backupName,
+                ...backupMeta,
             });
         }
 

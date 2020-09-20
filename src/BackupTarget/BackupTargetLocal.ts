@@ -35,6 +35,8 @@ export class BackupTargetLocal implements IBackupTarget {
         );
     }
 
+    public readonly name: string = 'local';
+
     get backupDir(): string {
         return this._backupDir;
     }
@@ -54,7 +56,6 @@ export class BackupTargetLocal implements IBackupTarget {
      * @param config
      */
     constructor(@inject('Logger') private logger: Logger, config: IBackupTargetLocalConfig) {
-
         if (Path.isAbsolute(config.dir)) {
             this._backupDir = String().replace(/\/+$/, '');
         } else {
@@ -165,5 +166,6 @@ export class BackupTargetLocal implements IBackupTarget {
     protected writeManifest() {
         fs.writeFileSync(Path.join(this._backupDir, 'manifest.json'), JSON.stringify(this._manifest), {flag: 'w+'});
     }
+
 
 }

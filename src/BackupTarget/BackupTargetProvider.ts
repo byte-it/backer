@@ -50,12 +50,4 @@ export class BackupTargetProvider {
     public getDefaultBackupTarget(): IBackupTarget {
         return this._defaultTarget;
     }
-
-    /**
-     * Returns the named target or null if the target name doesn't exist
-     * @param name
-     */
-    public getBackupTarget(name: string): IBackupTarget | null {
-        return null;
-    }
 }
