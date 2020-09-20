@@ -40,6 +40,10 @@ export class BackupTargetProvider {
                     container.registerInstance(['target', 'default'].join('.'), instance);
                     console.log('Add default');
                 }
+                logger.log({
+                    level: 'info',
+                    message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
+                });
             } catch (e) {
             }
 
