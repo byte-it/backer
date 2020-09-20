@@ -14,7 +14,7 @@ describe('BackupSourceMysql', () => {
         it('should throw an error if some required label is missing', () => {
             expect(() => BackupSourceMysql.fromContainer(null)).to.throw(Error);
         });
-        it('should prefer blacklist over whitelist', () => {
+        it('should prefer ignore list over include list', () => {
 
             const testContainer = {
                 Config: {
@@ -109,7 +109,34 @@ describe('BackupSourceMysql', () => {
     });
     describe('#constructor()', () => {
         it('should initialize correctly');
-        it('should prefer blacklist over whitelist');
+        it('should prefer ignore over include list', () => {
+            const source = new BackupSourceMysql(
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                'thedb1',
+                {},
+                ['table1'],
+                ['table1', 'table2'],
+            );
+
+            // tslint:disable-next-line:no-unused-expression
+            expect(source.includeTablesList).to.be.null;
+        });
+
+        it('should throw an error if constructed with multiple databases and an include list', () => {
+            expect(() =>
+                new BackupSourceMysql(
+                    'thedbhost',
+                    'thedbuser',
+                    'thedbpassword',
+                    ['thedb1', 'thedb2'],
+                    {},
+                    [],
+                    ['table1', 'table2'],
+                ),
+            ).to.throw(Error);
+        });
     });
     describe('#createDumpCmd()', () => {
         it('should include all basic options', () => {
@@ -179,9 +206,61 @@ describe('BackupSourceMysql', () => {
             const {cmd} = source.createDumpCmd('thedumpname.sql');
             expect(cmd).to.match(/(--optionkey="optionvalue")/);
         });
-        it('should set the ignored tables');
-        it('should set the included tables');
-        it('should skip the included tables if multiple databases set');
-        it('should skip the included tables if ignored tables are set');
+        it('should set one ignored table', () => {
+            const source = new BackupSourceMysql(
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                'thedb1',
+                {},
+                ['ignoredtable'],
+            );
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable")/);
+        });
+
+        it('should set multiple ignored tables', () => {
+            const source = new BackupSourceMysql(
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                'thedb1',
+                {},
+                ['ignoredtable1', 'ignoredtable2'],
+            );
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2")/);
+        });
+
+        it('should set multiple ignored tables with multiple databases', () => {
+            const source = new BackupSourceMysql(
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                ['thedb1', 'thedb2'],
+                {},
+                ['ignoredtable1', 'ignoredtable2'],
+            );
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2" --ignore-table="thedb2.ignoredtable1" --ignore-table="thedb2.ignoredtable2")/);
+        });
+
+        it('should set the included tables', () => {
+            const source = new BackupSourceMysql(
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                'thedb1',
+                {},
+                [],
+                ['includetable1', 'includetable2'],
+            );
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            expect(cmd).to.match(/(thedb1 includetable1 includetable2)/);
+        });
     });
 });

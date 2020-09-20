@@ -150,7 +150,17 @@ export class BackupSourceMysql implements IBackupSource {
         this._db = db;
         this._options = options;
         this._ignoreTablesList = ignoreTablesList;
-        this._includeTablesList = includeTablesList;
+
+        if (
+            Array.isArray(db)
+            && db.length > 1
+            && Array.isArray(includeTablesList)
+        ) {
+            throw new Error('Simultaneous usage of multiple databases and ignored databases is disallowed');
+        }
+        if (!(Array.isArray(ignoreTablesList) && ignoreTablesList.length > 0)) {
+            this._includeTablesList = includeTablesList;
+        }
     }
 
     /**
@@ -199,6 +209,9 @@ export class BackupSourceMysql implements IBackupSource {
      * Get the whitelist
      */
     get includeTablesList(): string[] | null {
+        if (typeof this._includeTablesList === 'undefined') {
+            return null;
+        }
         return this._includeTablesList;
     }
 
@@ -245,8 +258,16 @@ export class BackupSourceMysql implements IBackupSource {
         }
 
         if (this._ignoreTablesList) {
-            for (const table of this._ignoreTablesList) {
-                cmd += ` --ignore-table=${table}`;
+            if (!Array.isArray(this._db)) {
+                for (const table of this._ignoreTablesList) {
+                    cmd += ` --ignore-table="${this._db}.${table}"`;
+                }
+            } else {
+                for (const db of this._db) {
+                    for (const table of this._ignoreTablesList) {
+                        cmd += ` --ignore-table="${db}.${table}"`;
+                    }
+                }
             }
         }
         if (Array.isArray(this._db)) {
