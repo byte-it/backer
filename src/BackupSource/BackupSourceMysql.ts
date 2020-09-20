@@ -1,14 +1,15 @@
-import * as Joi from 'joi';
+import {exec, ExecException} from 'child_process';
 import {ContainerInspectInfo} from 'dockerode';
+import * as Joi from 'joi';
 import * as path from 'path';
 import {container, registry} from 'tsyringe';
+import {Logger} from 'winston';
 import {Config} from '../Config';
 import {ILabels} from '../Interfaces';
 import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource} from './IBackupSource';
-import {exec} from 'child_process';
-import {Logger} from 'winston';
+import ProcessEnv = NodeJS.ProcessEnv;
 
 export interface IMysqlLabels extends ILabels {
     mysql: {
@@ -17,7 +18,7 @@ export interface IMysqlLabels extends ILabels {
         password: string,
         tableIgnoreList?: string,
         tableIncludeList?: string,
-        options?: string,
+        options?: object,
     };
 }
 
@@ -30,7 +31,7 @@ export class BackupSourceMysql implements IBackupSource {
 
         return Joi.object().keys({
             database: Joi.string().required(),
-            options: Joi.string(),
+            options: Joi.object().unknown(true),
             password: Joi.string().required(),
             tableIgnoreList: Joi.string(),
             tableIncludeList: Joi.string(),
@@ -52,7 +53,7 @@ export class BackupSourceMysql implements IBackupSource {
             throw new Error('No mysql property found');
         }
 
-        const result =  this.getSchema().validate(labels.mysql);
+        const result = this.getSchema().validate(labels.mysql);
         if (result.hasOwnProperty('error')) {
             for (const error of result.error.details) {
                 logger.log({
@@ -73,9 +74,11 @@ export class BackupSourceMysql implements IBackupSource {
         const mysqlPassword = getConfigFromLabel(labels.mysql.user, inspectInfo);
         const db = getConfigFromLabel(labels.mysql.database, inspectInfo);
 
-        let options: string = null;
+        const options: object = {};
         if (labels.mysql.options) {
-            options = getConfigFromLabel(labels.mysql.options, inspectInfo);
+            for (const optionKey of Object.keys(labels.mysql.options)) {
+                options[optionKey] = getConfigFromLabel(labels.mysql.options[optionKey], inspectInfo);
+            }
         }
 
         let tableIncludeList: string[] = null;
@@ -96,7 +99,7 @@ export class BackupSourceMysql implements IBackupSource {
                 level: 'warning',
                 message: `Container ${containerName}: Found ignore & include list, the ignorelist is preferred!`,
                 ...defaultLogMeta,
-        });
+            });
             tableIncludeList = null;
         }
         if (Array.isArray(db) && Array.isArray(tableIncludeList)) {
@@ -119,7 +122,7 @@ export class BackupSourceMysql implements IBackupSource {
     private readonly _dbUser: string;
     private readonly _dbPassword: string;
     private readonly _db: string | string[];
-    private readonly _options: string;
+    private readonly _options: object;
     private readonly _ignoreTablesList?: string[];
     private readonly _includeTablesList?: string[];
 
@@ -138,7 +141,7 @@ export class BackupSourceMysql implements IBackupSource {
         dbUser: string,
         dbPassword: string,
         db: string | string[],
-        options?: string,
+        options?: object,
         ignoreTablesList?: string[],
         includeTablesList?: string[]) {
         this._dbHost = dbHost;
@@ -179,6 +182,13 @@ export class BackupSourceMysql implements IBackupSource {
     }
 
     /**
+     * Get the options
+     */
+    get options(): object {
+        return this._options;
+    }
+
+    /**
      * Get the blacklist
      */
     get ignoreTablesList(): string[] | null {
@@ -194,34 +204,44 @@ export class BackupSourceMysql implements IBackupSource {
 
     /**
      * Create a backup
-     * @param name
-     * @todo IMPLEMENT
+     * @param name {string} The name of the backup file to be created.
      */
     public async backup(name: string): Promise<string> {
-        const command = this.createDumpCmd(name);
+        const {cmd, env} = this.createDumpCmd(name);
         return new Promise<string>((resolve, reject) => {
-            exec(command, (error) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve();
-                }
-            });
+            exec(
+                cmd,
+                {env},
+                (error?: ExecException) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                },
+            );
         });
     }
 
     /**
-     * Generate the dump command for `mysqldump`
+     * Generate the dump command for `mysqldump`.
      * {@link https://linux.die.net/man/1/mysqldump}
-     * @param name
+     * The secrets user and password will be injected via the process env to prevent them from being leaked via logs.
      *
-     * @todo move secrets to env vars
+     * @param name {string} The name of the backup file to be created.
      */
-    public createDumpCmd(name: string) {
-        let cmd = `mysqldump --host="${this._dbHost}" --user="${this._dbUser}" --password="${this._dbPassword}"`;
+    public createDumpCmd(name: string): { cmd: string, env: ProcessEnv } {
+        const env = {
+            DB_USER: this._dbUser,
+            DB_PASSWORD: this._dbPassword,
+        };
+
+        let cmd = `mysqldump --host="${this._dbHost}" --user="$DB_USER" --password="$DB_PASSWORD"`;
 
         if (this._options) {
-            cmd += ` ${this._options}`;
+            for (const optionName of Object.keys(this._options)) {
+                cmd += ` --${optionName}="${this._options[optionName]}"`;
+            }
         }
 
         if (this._ignoreTablesList) {
@@ -229,8 +249,6 @@ export class BackupSourceMysql implements IBackupSource {
                 cmd += ` --ignore-table=${table}`;
             }
         }
-
-        // @todo: handle multiple databases!
         if (Array.isArray(this._db)) {
             cmd += ' --databases';
             for (const db of this._db) {
@@ -251,7 +269,10 @@ export class BackupSourceMysql implements IBackupSource {
         const tmpFile = path.join(tmpPath, name);
         cmd += ` > ${tmpFile}`;
 
-        return cmd;
+        return {
+            cmd,
+            env,
+        };
     }
 
     /**

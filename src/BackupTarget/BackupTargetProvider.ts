@@ -33,9 +33,12 @@ export class BackupTargetProvider {
                     default:
                         throw new Error(`Target ${target.type} not found.`);
                 }
+
+                console.log('Add default');
                 container.registerInstance(['target', target.name].join('.'), instance);
                 if (target.default === true) {
                     container.registerInstance(['target', 'default'].join('.'), instance);
+                    console.log('Add default');
                 }
             } catch (e) {
             }

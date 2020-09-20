@@ -11,10 +11,12 @@
 - [ ] Create compose test setup
 - [x] Switch to dependency injection/service container lib
 - [ ] Configuration file
-- [ ] static configured targets
+- [x] static configured targets
 - [ ] replace moment
 - [ ] Static pre configuration for sources
 - [ ] Implement queue locking per source
+- [ ] Docs
+- [ ] js doc
 
 ## Nice to have
 - [ ] REST-API

@@ -1,20 +1,20 @@
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
+import * as Joi from 'joi';
 import * as moment from 'moment';
 import {container, inject, injectable} from 'tsyringe';
+import {LogEntry, Logger} from 'winston';
 import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {IBackupTarget} from '../BackupTarget/IBackupTarget';
+import {Config} from '../Config';
 import {IBackupManifestBackup} from '../IBackupManifest';
 import {Queue} from '../Queue/Queue';
 import {SourceJob} from '../Queue/SourceJob';
 import {TargetJob} from '../Queue/TargetJob';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
-import * as Joi from 'joi';
-import {Config} from '../Config';
-import {Logger, LogEntry} from 'winston';
 
 /**
  * Backup represents a backup for one container. It manages the source and the target
