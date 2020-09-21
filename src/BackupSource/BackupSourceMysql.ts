@@ -24,6 +24,9 @@ export interface IMysqlLabels extends ILabels {
 
 /**
  * This class provides backup functionality for mysql/mariadb
+ *
+ * @category BackupSource
+ * @todo Add support for a partial data-exclude
  */
 export class BackupSourceMysql implements IBackupSource {
 

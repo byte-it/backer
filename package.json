@@ -8,7 +8,8 @@
   "scripts": {
     "start": "npx ts-node src/index.ts",
     "build": "tsc",
-    "test": "ts-mocha src/**/*.spec.ts"
+    "test": "ts-mocha src/**/*.spec.ts",
+    "docs": "jsdoc --verbose -c jsdoc.json"
   },
   "author": "",
   "license": "ISC",
@@ -37,9 +38,10 @@
     "@types/mocha": "^5.2.7",
     "@types/moment": "^2.13.0",
     "@types/node": "^12.12.54",
+    "better-docs": "^2.3.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "jsdoc": "^3.6.5",
+    "jsdoc": "^3.6.6",
     "mocha": "^6.2.3",
     "ts-mocha": "^6.0.0",
     "tsc": "^1.20150623.0",

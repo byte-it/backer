@@ -1,3 +1,5 @@
 .idea
 .tmp
+docs-dist/
+dist/
 node_modules

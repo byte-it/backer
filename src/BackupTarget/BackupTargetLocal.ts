@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as makeDir from 'make-dir';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
-import {container, inject, registry} from 'tsyringe';
+import {container, inject, injectable, registry} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
@@ -11,6 +11,7 @@ import {Config} from '../Config';
 
 /**
  * The configuration of the BackupTargetLocal.
+ * @category Config
  */
 export interface IBackupTargetLocalConfig extends IBackupTargetConfig {
     /**
@@ -21,13 +22,17 @@ export interface IBackupTargetLocalConfig extends IBackupTargetConfig {
 
 /**
  * The BackupTargetLocal saves the backups to a destination in the local filesystem.
+ * @extends IBackupTarget
+ *
+ * @category BackupTarget
  */
-@registry([{
-    token: 'target.local',
-    useClass: BackupTargetLocal,
-}])
 export class BackupTargetLocal implements IBackupTarget {
 
+    /**
+     * Factory
+     * @param {IBackupTargetLocalConfig} config
+     * @return {BackupTargetLocal}
+     */
     public static createInstance(config: IBackupTargetLocalConfig): BackupTargetLocal {
         return new BackupTargetLocal(
             container.resolve('Logger'),
@@ -52,8 +57,9 @@ export class BackupTargetLocal implements IBackupTarget {
     private readonly _manifest: IBackupManifest;
 
     /**
-     * @param logger
-     * @param config
+     * @constructor
+     * @param {winston.logger} logger The logger instance.
+     * @param {IBackupTargetLocalConfig} config
      */
     constructor(@inject('Logger') private logger: Logger, config: IBackupTargetLocalConfig) {
         if (Path.isAbsolute(config.dir)) {
@@ -105,7 +111,8 @@ export class BackupTargetLocal implements IBackupTarget {
     }
 
     /**
-     * @inheritDoc
+     * @inheritdoc
+     * @see IBackupTarget#addBackup
      */
     public async addBackup(tmpPath: string, name: string, manifest: IBackupManifestBackup): Promise<void> {
         if (!(fs.existsSync(tmpPath) && fs.lstatSync(tmpPath).isFile())) {

@@ -2,8 +2,8 @@ import * as Dockerode from 'dockerode';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
 import {Backup} from './Backup/Backup';
-import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
+import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 
 /**
  * BackupManager is responsible for the bookkeeping of all active backups.
@@ -13,12 +13,15 @@ import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 export class BackupManager {
 
   /**
-   *
+   * The list of backups currently active.
    */
   private readonly _backups: { [containerId: string]: Backup };
 
   /**
-   *
+   * Constructor
+   * @param {Dockerode} docker The Dockerode instance to watch the docker daemon.
+   * @param {winston.Logger} logger The logger.
+   * @param {BackupTargetProvider}  targetProvider The target provider.
    */
   constructor(
       @inject(Dockerode) private docker: Dockerode,
@@ -44,24 +47,27 @@ export class BackupManager {
   }
 
   /**
-   *
-   * @param backup
+   * Add a backup to the manged list.
+   * @param {Backup} backup
    */
   public addBackup(backup: Backup): void {
     this._backups[backup.containerId] = backup;
   }
 
   /**
-   *
-   * @param containerId
+   * Retrieves a backup by the containerId
+   * @param {string} containerId
+   * @return {Backup|null} The {@link Backup} with for the containerId or null if not found
    */
   public getBackup(containerId: string): Backup {
     return this._backups[containerId];
   }
 
   /**
+   * Stops the backing up of a single backup by the containerId. The backup cron will be stopped an the backup removed
+   * from the list of backups
    *
-   * @param containerId
+   * @param {string} containerId
    */
   public stopBackup(containerId: string): void {
     if (this._backups[containerId]) {

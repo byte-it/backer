@@ -3,6 +3,11 @@ import {singleton} from 'tsyringe';
 import {BackupSourceMysql} from './BackupSourceMysql';
 import {IBackupSource} from './IBackupSource';
 
+/**
+ * BackupSourceProvider is a factory to instantiate {@link IBackupSource}s by config.
+ *
+ * @category BackupSource
+ */
 @singleton()
 export class BackupSourceProvider {
   /**

@@ -5,9 +5,13 @@ import {ILabels} from './Interfaces';
 
 /**
  * Extract the labels beginning with `backer` and convert the dotted keys to nested objects
- * @param labels
+ *
+ * @category Utility
+ *
+ * @param {object} labels The list of labels.
+ * @return {object} An object containing all labels under the `backer.` prefix.
  */
-export const extractLabels = (labels: { [propName: string]: any; }): ILabels | IMysqlLabels => {
+export function extractLabels(labels: { [propName: string]: any; }): ILabels | IMysqlLabels {
     // Convert all doted keys to
     const clonedLabels = {};
     for (const key in labels) {
@@ -19,18 +23,21 @@ export const extractLabels = (labels: { [propName: string]: any; }): ILabels | I
     object(clonedLabels);
     return clonedLabels.hasOwnProperty('backer') ?
         // @ts-ignore
-        clonedLabels['backer'] :
+        clonedLabels.backer :
         {};
-};
+}
 
 /**
+ * Extract an environment variable from the container.
  *
- * @param env
- * @param container
+ * @category Utility
  *
- * @throws Error If the env isn't defined on the container
+ * @param {string} env
+ * @param {dockerode.ContainerInspectInfo} container
+ *
+ * @throws {Error} If the env isn't defined on the container
  */
-export const getEnvFromContainer = (env: string, container: ContainerInspectInfo) => {
+export function getEnvFromContainer(env: string, container: ContainerInspectInfo) {
     const envVars = {};
     for (const envVar of container.Config.Env) {
         const name = envVar.substr(0, envVar.indexOf('='));
@@ -40,24 +47,27 @@ export const getEnvFromContainer = (env: string, container: ContainerInspectInfo
         throw new Error(`Container ${container.Name}: Can't find ENV ${env}`);
     }
     return envVars[env];
-};
+}
 
 /**
+ * Extract the value from a label and handles values that references environment variables.
  *
- * @param label
- * @param container
- * @param defaultValue
+ * @category Utility
+ *
+ * @param {string} labelValue The value of the label to be evaluated.
+ * @param {dockerode.ContainerInspectInfo} container The container to extract env vars from.
+ * @param {string} defaultValue An optional default value.
+ * @return {string} The configured value
  */
-
 export function getConfigFromLabel(
-    label: string,
+    labelValue: string,
     container: ContainerInspectInfo,
     defaultValue?: string,
 ): string {
-    if (label.startsWith('Env:')) {
-        return getEnvFromContainer(label.substr(4), container);
-    } else if (label.startsWith('Text:')) {
-        return label.substr(5);
+    if (labelValue.startsWith('Env:')) {
+        return getEnvFromContainer(labelValue.substr(4), container);
+    } else if (labelValue.startsWith('Text:')) {
+        return labelValue.substr(5);
     } else if (defaultValue) {
         return defaultValue;
     }
@@ -65,12 +75,15 @@ export function getConfigFromLabel(
 }
 
 /**
+ * Extracts the hostname for a given container in a given network
  *
- * @todo: improve to allow automatic detection if the db and backer are in the same network
- * @param network
- * @param container
+ * @category Utility
  *
- * @throws Error Thrown if the network isn't found on the container
+ * @todo improve to allow automatic detection if the db and backer are in the same network
+ * @param network {string} The desired network
+ * @param container {dockerode.ContainerInspectInfo}
+ *
+ * @throws {Error} Thrown if the network isn't found on the container
  */
 export function getHostForContainer(network: string, container: ContainerInspectInfo): string {
     if (container.NetworkSettings.Networks[network]) {

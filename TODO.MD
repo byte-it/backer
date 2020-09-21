@@ -4,7 +4,7 @@
 - [x] Implement basic cron handling
 - [x] Implement backup tasks (dump & copying to target in job queue)
 - [ ] Implement s3 target
-- [ ] Implement mysql source
+- [x] Implement mysql source
 - [ ] Implement postgres source
 - [ ] Implement retention with count or date
 - [x] Use winston as logging framework

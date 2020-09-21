@@ -9,6 +9,8 @@ import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
  * The BackupTargetProvider manages all available and configured BackupTargets.
  * BackupTargets need to be statically configured, as they may contain sensitive credentials or are reused by multiple
  * containers.
+ *
+ * @category BackupTarget
  */
 @singleton()
 export class BackupTargetProvider {

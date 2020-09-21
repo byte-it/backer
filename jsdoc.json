@@ -1,0 +1,38 @@
+{
+  "opts": {
+    "template": "node_modules/better-docs",
+    "readme": "README.md",
+    "recurse": true,
+    "destination": "./docs-dist/"
+  },
+  "recurseDepth": 10,
+  "tags": {
+    "allowUnknownTags": ["optional", "category"] //or true
+  },
+  "plugins": [
+    "node_modules/better-docs/typescript",
+    "node_modules/better-docs/category"
+  ],
+  "source": {
+    "include": ["./src"],
+    "includePattern": ".+\\.(jsx|js|ts|tsx)$",
+    "excludePattern": "((^|\\/|\\\\)_|.spec.ts$)"
+  },
+  "verbose": true,
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "search": true,
+    "better-docs": {
+      "name": "Backer Documentation",
+      "title": "Backer", // HTML title
+      "hideGenerator": false,
+      "navLinks": [
+        {
+          "label": "Github",
+          "href": "https://github.com/byte-it/backer"
+        }
+      ]
+    }
+  }
+}

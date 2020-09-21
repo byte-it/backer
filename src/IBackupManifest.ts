@@ -1,5 +1,6 @@
 /**
  * Represents one backup in the manifest
+ * @category BackupTarget
  */
 export interface IBackupManifestBackup {
 
@@ -20,7 +21,7 @@ export interface IBackupManifestBackup {
     /**
      * Time of the creation of the backup
      */
-    date: string|Date;
+    date: string | Date;
 
     /**
      * Path of the backup file relative to the manifest file
@@ -37,17 +38,34 @@ export interface IBackupManifestBackup {
 
 /**
  * Contains information about the backup target
+ * @category BackupTarget
  */
 export interface IBackupManifestTarget {
+    /**
+     * The name of the target
+     */
     name: string;
+
+    /**
+     * The type of the target
+     */
     type: string;
 }
 
 /**
  * The backup manifest keeps information about all made backups for one target.
  * It ist saved alongside the backups itself.
+ * @category BackupTarget
  */
 export interface IBackupManifest {
+    /**
+     * The TargetManifest
+     */
     target: IBackupManifestTarget;
+
+    /**
+     * A list of all done backups by the target
+     * @type {IBackupManifestBackup[]}
+     */
     backups: IBackupManifestBackup[];
 }

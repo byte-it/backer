@@ -95,5 +95,7 @@ typings/
 
 # Custom ignores for this project
 dist/
+docs-dist/
 .tmp
 tmp
+

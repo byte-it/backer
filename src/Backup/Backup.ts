@@ -2,7 +2,7 @@ import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
 import * as moment from 'moment';
-import {container, inject, injectable} from 'tsyringe';
+import {container, inject, injectable, singleton} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
 import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
 import {IBackupSource} from '../BackupSource/IBackupSource';
@@ -17,39 +17,68 @@ import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
 
 /**
- * Backup represents a backup for one container. It manages the source and the target
+ * Backup class
  */
-@injectable()
 export class Backup {
-
+    /**
+     * The containerName
+     * @type {string}
+     */
     get containerName(): string {
         return this._containerName;
     }
 
+    /**
+     * The containerId
+     * @type {string}
+     */
     get containerId(): string {
         return this._containerId;
     }
 
+    /**
+     * The backup source
+     * @type {IBackupSource}
+     */
     get source(): IBackupSource {
         return this._source;
     }
 
+    /**
+     * The backup target
+     * @type {IBackupTarget}
+     */
     get target(): IBackupTarget {
         return this._target;
     }
 
+    /**
+     * The interval
+     * @type {string}
+     */
     get interval(): string {
         return this._interval;
     }
 
+    /**
+     * The retention
+     * @type {string}
+     */
     get retention(): string {
         return this._retention;
     }
 
+    /**
+     * The name pattern
+     * @type {string}
+     */
     get namePattern(): string {
         return this._namePattern;
     }
 
+    /**
+     *
+     */
     public static getSchema() {
         return Joi.object().keys({
             target: Joi.string(),
@@ -64,9 +93,9 @@ export class Backup {
     }
 
     /**
-     * Factory to create a Backup from {@link ContainerInspectInfo}
-     * @param inspectInfo ContainerInspectInfo
-     * @return Backup
+     * Factory to create a Backup from {@link Dockerode.ContainerInspectInfo}
+     * @param {Dockerode.ContainerInspectInfo} inspectInfo
+     * @return {Backup}
      */
     public static fromContainer(inspectInfo: ContainerInspectInfo): Backup {
         const logger: Logger = container.resolve<Logger>('Logger');
@@ -181,28 +210,27 @@ export class Backup {
 
     /**
      * The format of the file name of the backups
-     * @TODO: define placeholder
+     * @TODO define placeholder
      */
     private readonly _namePattern: string;
 
     /**
      * The cron instance that triggers the backup creation
-     * @private
      */
     private _cron: CronJob;
 
-    private _defaultMeta: object;
+    private readonly _defaultMeta: object;
 
     /**
-     * @param config
-     * @param logger
-     * @param containerId
-     * @param containerName
-     * @param source
-     * @param target
-     * @param interval
-     * @param retention
-     * @param namePattern
+     * @param {Config} config
+     * @param {winston.Logger} logger
+     * @param {string} containerId
+     * @param {string} containerName
+     * @param {IBackupSource} source
+     * @param {IBackupTarget} target
+     * @param {string} interval
+     * @param {string} retention
+     * @param {string} namePattern
      */
     constructor(
         @inject(Config) private config: Config,
@@ -263,8 +291,8 @@ export class Backup {
         return name;
     }
 
+    //
     /**
-     * @todo replace with winston
      * @param log
      * @protected
      */
@@ -278,6 +306,7 @@ export class Backup {
         }
     }
 
+    //
     /**
      * Start a single backup process
      */
@@ -285,7 +314,7 @@ export class Backup {
         const backupName = this.createName();
 
         const backupMeta = {
-            ... this._defaultMeta,
+            ...this._defaultMeta,
             backupName,
             sourceName: this._source.name,
             targetName: this._target.name,

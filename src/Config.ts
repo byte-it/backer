@@ -3,12 +3,17 @@ import {singleton} from 'tsyringe';
 
 /**
  * Config is global singleton that provides all configurations
+ * @category Config
  */
 @singleton()
 export class Config {
 
     private readonly _config: object;
 
+    /**
+     * @constructor
+     * @todo Allow injection of config
+     */
     constructor() {
         this._config = {
             tmpPath: process.env.TMP_DIR ? process.env.TMP_DIR : path.join(process.cwd(), 'tmp/'),
@@ -25,6 +30,11 @@ export class Config {
         };
     }
 
+    /**
+     * Get a config parameter
+     * @param key
+     * @todo Implement deep retrieval
+     */
     public get(key: string): any {
         return this._config[key];
     }
