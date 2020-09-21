@@ -16,7 +16,7 @@
 - [ ] Static pre configuration for sources
 - [ ] Implement queue locking per source
 - [ ] Docs
-- [ ] js doc
+- [x] js doc
 
 ## Nice to have
 - [ ] REST-API
