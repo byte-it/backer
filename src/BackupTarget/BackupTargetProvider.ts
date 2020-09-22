@@ -4,6 +4,7 @@ import {Config} from '../Config';
 import './BackupTargetLocal';
 import {BackupTargetLocal, IBackupTargetLocalConfig} from './BackupTargetLocal';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
+import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
 
 /**
  * The BackupTargetProvider manages all available and configured BackupTargets.
@@ -15,34 +16,35 @@ import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 @singleton()
 export class BackupTargetProvider {
 
-    private readonly _config: Config;
-
     /**
      * The default target to use when none is specified
      */
     private _defaultTarget: IBackupTarget;
 
-    constructor(@inject(Config) config: Config, @inject('Logger') private logger: Logger) {
-        this._config = config;
+    constructor(@inject(Config) private config: Config, @inject('Logger') private logger: Logger) {
+    }
 
-        for (const target of config.get('targets') as IBackupTargetConfig[]) {
+    public async init() {
+        for (const target of this.config.get('targets') as IBackupTargetConfig[]) {
             try {
                 let instance: IBackupTarget;
                 switch (target.type) {
                     case 'local':
-                        instance = BackupTargetLocal.createInstance((target as IBackupTargetLocalConfig));
+                        instance = await BackupTargetLocal.createInstance((target as IBackupTargetLocalConfig));
+                        break;
+                    case 's3':
+                        instance = await BackupTargetS3.createInstance((target as IBackupTargetS3Config));
                         break;
                     default:
                         throw new Error(`Target ${target.type} not found.`);
                 }
 
-                console.log('Add default');
                 container.registerInstance(['target', target.name].join('.'), instance);
                 if (target.default === true) {
                     container.registerInstance(['target', 'default'].join('.'), instance);
                     console.log('Add default');
                 }
-                logger.log({
+                this.logger.log({
                     level: 'info',
                     message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
                 });

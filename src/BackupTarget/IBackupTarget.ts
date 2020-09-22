@@ -36,6 +36,15 @@ export interface IBackupTargetConfig {
 export interface IBackupTarget {
 
     readonly name: string;
+
+    /**
+     * Initializes the target. The constructor only assigns the config. This allows the init method to perform async
+     * operations up on start, like reading the manifest and validating that it can write to the target implementation.
+     * @method
+     * @return {Promise<void>} Resolves once all initiation work is done.
+     */
+    init(): Promise<void>;
+
     /**
      * List all backups on the remote
      * @method

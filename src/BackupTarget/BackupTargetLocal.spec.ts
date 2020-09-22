@@ -43,29 +43,30 @@ describe('BackupTargetLocal', () => {
 
             it('should write the manifest to the fs', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
-
+                target.init();
                 const readManifest = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '.tmp/targets/test/manifest.json'), {encoding: 'utf-8'}));
 
                 expect(readManifest).to.deep.equal(target.getManifest());
             });
 
-            it('should throw an error if the target dir doesn\'t exist', () => {
-                expect(
-                    () => new BackupTargetLocal(container.resolve('Logger'), {
-                        type: 'local',
-                        name: 'test',
-                        dir: './.tmp/targets/idontexist'
-                    }),
-                ).to.throw(Error);
-            });
+
         });
     });
-
+    describe('#init()', () => {
+        it('should throw an error if the target dir doesn\'t exist', () => {
+            const target = new BackupTargetLocal(container.resolve('Logger'), {
+                type: 'local',
+                name: 'test',
+                dir: './.tmp/targets/idontexist',
+            });
+            expect(target.init()).to.be.rejectedWith(Error);
+        });
+    });
     describe('#addBackup()', () => {
 
         const createBackup = async () => {
             const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
-
+            await target.init();
             const manifest = {
                 name: 'test',
                 containerName: 'test',

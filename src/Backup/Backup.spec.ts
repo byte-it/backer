@@ -6,9 +6,13 @@ import {container} from 'tsyringe';
 import {createLogger, Logger, transports} from 'winston';
 import {Config} from '../Config';
 import {Backup} from './Backup';
+import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 
-beforeEach(() => {
+beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
+
+    await container.resolve<BackupTargetProvider>(BackupTargetProvider).init();
+
 });
 describe('Backup', () => {
     describe('#fromContainer()', () => {

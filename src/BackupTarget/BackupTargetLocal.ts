@@ -33,11 +33,13 @@ export class BackupTargetLocal implements IBackupTarget {
      * @param {IBackupTargetLocalConfig} config
      * @return {BackupTargetLocal}
      */
-    public static createInstance(config: IBackupTargetLocalConfig): BackupTargetLocal {
-        return new BackupTargetLocal(
+    public static async createInstance(config: IBackupTargetLocalConfig): Promise<BackupTargetLocal> {
+        const target = new BackupTargetLocal(
             container.resolve('Logger'),
             config,
         );
+        await target.init();
+        return target;
     }
 
     public readonly name: string = 'local';
@@ -54,14 +56,14 @@ export class BackupTargetLocal implements IBackupTarget {
     /**
      * @private The manifest managed by this target instance
      */
-    private readonly _manifest: IBackupManifest;
+    private _manifest: IBackupManifest;
 
     /**
      * @constructor
      * @param {winston.logger} logger The logger instance.
      * @param {IBackupTargetLocalConfig} config
      */
-    constructor(@inject('Logger') private logger: Logger, config: IBackupTargetLocalConfig) {
+    constructor(@inject('Logger') private logger: Logger, private config: IBackupTargetLocalConfig) {
         if (Path.isAbsolute(config.dir)) {
             this._backupDir = String().replace(/\/+$/, '');
         } else {
@@ -73,7 +75,12 @@ export class BackupTargetLocal implements IBackupTarget {
 
         // Remove the training slash
         this._backupDir = String(calculatedPath).replace(/\/+$/, '');
+    }
 
+    /**
+     * @inheritDoc
+     */
+    public async init() {
         if (fs.existsSync(this._backupDir)) {
             const manifestPath = Path.join(this._backupDir, 'manifest.json');
             if (fs.existsSync(Path.join(this._backupDir, 'manifest.json'))) {
@@ -84,15 +91,15 @@ export class BackupTargetLocal implements IBackupTarget {
             } else {
                 this.logger.log({
                     level: 'info',
-                    message: `BackupTarget ${config.name}: The configured directory doesn't include a manifest file, a new one will be created`,
-                    targetName: config.name,
-                    targetType: config.type,
+                    message: `BackupTarget ${this.config.name}: The configured directory doesn't include a manifest file, a new one will be created`,
+                    targetName: this.config.name,
+                    targetType: this.config.type,
                 });
 
                 this._manifest = {
                     backups: [],
                     target: {
-                        name: config.name,
+                        name: this.config.name,
                         type: 'local',
                     },
                 };
@@ -102,9 +109,9 @@ export class BackupTargetLocal implements IBackupTarget {
         } else {
             this.logger.log({
                 level: 'error',
-                message: `BackupTarget ${config.name}: The directory ${this._backupDir} doesn't exist.`,
-                targetName: config.name,
-                targetType: config.type,
+                message: `BackupTarget ${this.config.name}: The directory ${this._backupDir} doesn't exist.`,
+                targetName: this.config.name,
+                targetType: this.config.type,
             });
             throw new Error('Dir does nit exist');
         }
