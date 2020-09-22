@@ -15,15 +15,18 @@
 - [ ] replace moment
 - [ ] Static pre configuration for sources
 - [ ] Implement queue locking per source
+- [ ] Switch to proper queue (Framework to be defined)
 - [ ] Docs
 - [x] js doc
+- [ ] Async factory with annotations and interface for Targets
 
 ## Nice to have
-- [ ] REST-API
-- [ ] Web Interface
-- [ ] Custom compression
-- [ ] Encryption
-- [ ] Rollback 
+- [ ] REST-API (express http/socket)
+- [ ] CLI via socket (oclif)
+- [ ] Web Interface (vue + tailwind)
+- [ ] Custom compression (middleware stack for backups?)
+- [ ] Encryption (middleware stack for backups?)
+- [ ] Rollback (triggering via api)
 - [ ] Rollback tests
 - [ ] Integrity checks (File hash)
 - [ ] Job queue priority
