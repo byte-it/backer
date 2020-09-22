@@ -14,9 +14,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hapi/joi": "^15.1.1",
-    "@types/hapi__joi": "^17.1.4",
-    "@types/winston": "^2.4.4",
     "cron": "^1.8.2",
     "docker-events": "0.0.2",
     "dockerode": "^2.5.8",
@@ -38,6 +35,8 @@
     "@types/mocha": "^5.2.7",
     "@types/moment": "^2.13.0",
     "@types/node": "^12.12.54",
+    "@types/hapi__joi": "^17.1.4",
+    "@types/winston": "^2.4.4",
     "better-docs": "^2.3.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
@@ -46,6 +45,6 @@
     "ts-mocha": "^6.0.0",
     "tsc": "^1.20150623.0",
     "tslint": "^5.20.1",
-    "typescript": "^3.9.7"
+    "typescript": "^4.0.3"
   }
 }
