@@ -45,6 +45,8 @@ describe('Backup', () => {
             expect(backup.interval).to.equal('* * * * *');
             expect(backup.namePattern).to.equal('test');
             expect(backup.retention).to.equal('10');
+
+            backup.stop();
         });
 
         it('should apply the default labels correctly', () => {
@@ -72,6 +74,8 @@ describe('Backup', () => {
             expect(backup.interval).to.equal('0 0 * * *');
             expect(backup.namePattern).to.equal('<DATE>-<CONTAINER_NAME>');
             expect(backup.retention).to.equal('10');
+
+            backup.stop();
         });
         it('should throw a validation error if the labels don\'t meet the schema', () => {
             const testContainer = {
@@ -116,6 +120,9 @@ describe('Backup', () => {
                 }, null, '0 0 * * *', '0', pattern);
             const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}.sql`;
             expect(backup.createName(date)).to.equal(expectedName);
+
+
+            backup.stop();
         });
     });
 });
