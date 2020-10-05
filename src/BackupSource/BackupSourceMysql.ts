@@ -1,15 +1,15 @@
 import {exec, ExecException} from 'child_process';
+import ProcessEnv = NodeJS.ProcessEnv;
+import {IConfig} from 'config';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
-import * as path from 'path';
-import {container, registry} from 'tsyringe';
+import * as Path from 'path';
+import {container} from 'tsyringe';
 import {Logger} from 'winston';
-import {Config} from '../Config';
 import {ILabels} from '../Interfaces';
 import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource} from './IBackupSource';
-import ProcessEnv = NodeJS.ProcessEnv;
 
 export interface IMysqlLabels extends ILabels {
     mysql: {
@@ -289,8 +289,8 @@ export class BackupSourceMysql implements IBackupSource {
                 }
             }
         }
-        const tmpPath = container.resolve(Config).get('tmpPath');
-        const tmpFile = path.join(tmpPath, name);
+        const tmpPath = container.resolve<IConfig>('config').get('tmpPath') as string;
+        const tmpFile = Path.isAbsolute(tmpPath) ? Path.join(tmpPath, name) : Path.join(process.cwd(), tmpPath, name);
         cmd += ` > ${tmpFile}`;
 
         return {

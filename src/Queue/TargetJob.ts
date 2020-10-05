@@ -1,8 +1,9 @@
-import {IBackupTarget} from '../BackupTarget/IBackupTarget';
-import {Config} from '../Config';
-import {Job} from './Job';
+import {IConfig} from 'config';
+import * as Path from 'path';
 import {container} from 'tsyringe';
+import {IBackupTarget} from '../BackupTarget/IBackupTarget';
 import {IBackupManifestBackup} from '../IBackupManifest';
+import {Job} from './Job';
 
 export class TargetJob extends Job {
 
@@ -20,7 +21,10 @@ export class TargetJob extends Job {
     }
 
     public async execute() {
-        const tmpPath = container.resolve(Config).get('tmpPath');
-        return this._target.addBackup(`${tmpPath}/${this._name}`, this._name, this._manifest);
+        const tmpPath = container.resolve<IConfig>('config').get('tmpPath') as string;
+        const tmpFile = Path.isAbsolute(tmpPath) ?
+            Path.join(tmpPath, name) :
+            Path.join(process.cwd(), tmpPath, this._name);
+        return this._target.addBackup(tmpFile, this._name, this._manifest);
     }
 }

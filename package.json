@@ -14,6 +14,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/config": "0.0.36",
+    "@types/yaml": "^1.9.7",
+    "aws-sdk": "^2.757.0",
+    "config": "^3.3.2",
     "cron": "^1.8.2",
     "docker-events": "0.0.2",
     "dockerode": "^2.5.8",
@@ -26,16 +30,17 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "tsyringe": "^4.3.0",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "yaml": "^1.10.0"
   },
   "devDependencies": {
     "@types/cron": "^1.7.2",
     "@types/dockerode": "^2.5.34",
     "@types/expect": "^1.20.4",
+    "@types/hapi__joi": "^17.1.4",
     "@types/mocha": "^5.2.7",
     "@types/moment": "^2.13.0",
     "@types/node": "^12.12.54",
-    "@types/hapi__joi": "^17.1.4",
     "@types/winston": "^2.4.4",
     "better-docs": "^2.3.2",
     "chai": "^4.2.0",

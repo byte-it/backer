@@ -3,10 +3,9 @@ import {mkdirSync} from 'fs';
 import moment = require('moment');
 import * as Path from 'path';
 import {container} from 'tsyringe';
-import {createLogger, Logger, transports} from 'winston';
-import {Config} from '../Config';
-import {Backup} from './Backup';
+import {Logger} from 'winston';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
+import {Backup} from './Backup';
 
 beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
@@ -112,7 +111,7 @@ describe('Backup', () => {
             const date = moment();
 
             const backup = new Backup(
-                container.resolve(Config),
+                container.resolve('config'),
                 container.resolve('Logger'),
                 containerId,
                 containerName,

@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import * as Path from 'path';
-import {Config} from '../Config';
 import {BackupSourceMysql} from './BackupSourceMysql';
 
 describe('BackupSourceMysql', () => {
@@ -108,7 +107,6 @@ describe('BackupSourceMysql', () => {
         });
     });
     describe('#constructor()', () => {
-        it('should initialize correctly');
         it('should prefer ignore over include list', () => {
             const source = new BackupSourceMysql(
                 'thedbhost',

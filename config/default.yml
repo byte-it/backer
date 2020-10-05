@@ -1,0 +1,8 @@
+tmpPath: './tmp/'
+defaultTarget: 'local'
+socketPath: '/var/run/docker.sock'
+targets:
+- name: 'default'
+  type: 'local'
+  dir: './.tmp/targets/local'
+  default: true

@@ -1,14 +1,14 @@
+import {IConfig} from 'config';
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
 import * as moment from 'moment';
-import {container, inject, injectable, singleton} from 'tsyringe';
+import {container, inject} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
 import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {IBackupTarget} from '../BackupTarget/IBackupTarget';
-import {Config} from '../Config';
 import {IBackupManifestBackup} from '../IBackupManifest';
 import {Queue} from '../Queue/Queue';
 import {SourceJob} from '../Queue/SourceJob';
@@ -167,7 +167,7 @@ export class Backup {
         });
 
         return new Backup(
-            container.resolve(Config),
+            container.resolve('config'),
             container.resolve('Logger'),
             inspectInfo.Id,
             containerName,
@@ -222,7 +222,7 @@ export class Backup {
     private readonly _defaultMeta: object;
 
     /**
-     * @param {Config} config
+     * @param {IConfig} config
      * @param {winston.Logger} logger
      * @param {string} containerId
      * @param {string} containerName
@@ -233,7 +233,7 @@ export class Backup {
      * @param {string} namePattern
      */
     constructor(
-        @inject(Config) private config: Config,
+        @inject('config') private config: IConfig,
         @inject('Logger') private logger: Logger,
         containerId: string,
         containerName: string,

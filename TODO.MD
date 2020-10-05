@@ -10,15 +10,15 @@
 - [x] Use winston as logging framework
 - [ ] Create compose test setup
 - [x] Switch to dependency injection/service container lib
-- [ ] Configuration file
+- [x] Configuration file -> implemented with 'config'
 - [x] static configured targets
 - [ ] replace moment
 - [ ] Static pre configuration for sources
 - [ ] Implement queue locking per source
 - [ ] Switch to proper queue (Framework to be defined)
-- [ ] Docs
+- [ ] Docs with Slate
 - [x] js doc
-- [ ] Async factory with annotations and interface for Targets
+- [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 
 ## Nice to have
 - [ ] REST-API (express http/socket)

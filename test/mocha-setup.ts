@@ -2,9 +2,9 @@
  * @file Provide global setup for all tests.
  */
 
+import * as config from 'config';
 import {container} from 'tsyringe';
 import {createLogger, Logger, transports} from 'winston';
-
 /**
  * Setup all needed injectables for the container.
  */
@@ -14,6 +14,8 @@ beforeEach(() => {
             new transports.Console(),
         ],
     }));
+
+    container.registerInstance('config', config);
 });
 
 /**
