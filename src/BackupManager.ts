@@ -1,7 +1,7 @@
 import * as Dockerode from 'dockerode';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
-import {Backup} from './Backup/Backup';
+import {BackupMandate} from './Backup/BackupMandate';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 
@@ -15,7 +15,7 @@ export class BackupManager {
   /**
    * The list of backups currently active.
    */
-  private readonly _backups: { [containerId: string]: Backup };
+  private readonly _backups: { [containerId: string]: BackupMandate };
 
   /**
    * Constructor
@@ -31,13 +31,13 @@ export class BackupManager {
     this._backups = {};
   }
 
-  public async createBackup(containerId: string): Promise<Backup> {
+  public async createBackup(containerId: string): Promise<BackupMandate> {
     const inspect = await this.docker.getContainer(containerId).inspect();
     if (inspect.Config.Labels['backer.type']) {
       try {
-        const backup = Backup.fromContainer(inspect);
+        const backup = BackupMandate.fromContainer(inspect);
         this.addBackup(backup);
-        return Promise.resolve<Backup>(backup);
+        return Promise.resolve<BackupMandate>(backup);
       } catch (error) {
         this.logger.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
         return Promise.reject(error.message);
@@ -50,7 +50,7 @@ export class BackupManager {
    * Add a backup to the manged list.
    * @param {Backup} backup
    */
-  public addBackup(backup: Backup): void {
+  public addBackup(backup: BackupMandate): void {
     this._backups[backup.containerId] = backup;
   }
 
@@ -59,7 +59,7 @@ export class BackupManager {
    * @param {string} containerId
    * @return {Backup|null} The {@link Backup} with for the containerId or null if not found
    */
-  public getBackup(containerId: string): Backup {
+  public getBackup(containerId: string): BackupMandate {
     return this._backups[containerId];
   }
 

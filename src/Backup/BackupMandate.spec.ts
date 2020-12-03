@@ -5,7 +5,7 @@ import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
-import {Backup} from './Backup';
+import {BackupMandate} from './BackupMandate';
 import {BackupTargetLocal} from '../BackupTarget/BackupTargetLocal';
 import {IConfig} from 'config';
 
@@ -47,7 +47,7 @@ describe('Backup', () => {
                 },
             };
             // @ts-ignore
-            const backup = Backup.fromContainer(testContainer);
+            const backup = BackupMandate.fromContainer(testContainer);
 
             expect(backup.containerName).to.equal('test');
             expect(backup.containerId).to.equal('testId');
@@ -84,7 +84,7 @@ describe('Backup', () => {
                 },
             };
             // @ts-ignore
-            const backup = Backup.fromContainer(testContainer);
+            const backup = BackupMandate.fromContainer(testContainer);
             expect(backup.interval).to.equal('0 0 * * *');
             expect(backup.namePattern).to.equal('<DATE>-<CONTAINER_NAME>');
             expect(backup.retention).to.equal('10');
@@ -111,7 +111,7 @@ describe('Backup', () => {
                 },
             };
             // @ts-ignore
-            expect(() => Backup.fromContainer(testContainer)).to.throw(Error);
+            expect(() => BackupMandate.fromContainer(testContainer)).to.throw(Error);
         });
         it('should throw an error if the target doesn\'t exists', () => {
             const testContainer = {
@@ -135,7 +135,7 @@ describe('Backup', () => {
                 },
             };
             // @ts-ignore
-            expect(() => Backup.fromContainer(testContainer)).to.throw(Error);
+            expect(() => BackupMandate.fromContainer(testContainer)).to.throw(Error);
         });
     });
     describe('#createName()', () => {
@@ -145,7 +145,7 @@ describe('Backup', () => {
             const pattern = '<DATE>-<CONTAINER_NAME>';
             const date = moment();
 
-            const backup = new Backup(
+            const backup = new BackupMandate(
                 container.resolve('Config'),
                 container.resolve('Logger'),
                 containerId,

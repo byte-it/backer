@@ -17,9 +17,9 @@ import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
 
 /**
- * Backup class
+ * BackupMandate class
  */
-export class Backup {
+export class BackupMandate {
     /**
      * The containerName
      * @type {string}
@@ -95,9 +95,9 @@ export class Backup {
     /**
      * Factory to create a Backup from {@link Dockerode.ContainerInspectInfo}
      * @param {Dockerode.ContainerInspectInfo} inspectInfo
-     * @return {Backup}
+     * @return {BackupMandate}
      */
-    public static fromContainer(inspectInfo: ContainerInspectInfo): Backup {
+    public static fromContainer(inspectInfo: ContainerInspectInfo): BackupMandate {
         const logger: Logger = container.resolve<Logger>('Logger');
         const containerName = inspectInfo.Name.replace('/', '');
 
@@ -166,7 +166,7 @@ export class Backup {
             ...defaultLogMeta,
         });
 
-        return new Backup(
+        return new BackupMandate(
             container.resolve('Config'),
             container.resolve('Logger'),
             inspectInfo.Id,
@@ -291,6 +291,15 @@ export class Backup {
         return name;
     }
 
+    /**
+     * Calculates which backups can be delete with the current retention settings.
+     * @param manifest A list of the all backup manifest currently stored on the target for this backup.
+     * @return A list of all backups
+     */
+    public calculateRetention(manifest: IBackupManifestBackup[]): IBackupManifestBackup[] {
+        return [];
+    }
+
     //
     /**
      * @param log
@@ -361,6 +370,7 @@ export class Backup {
         }
 
         this.log(`Backup ${backupName} transferred to target`);
+        // @todo: Do rention calculation here
         return;
     }
 }
