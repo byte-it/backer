@@ -3,8 +3,8 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as fs from 'fs';
 import * as Path from 'path';
 import * as rimraf from 'rimraf';
-import {BackupTargetLocal} from './BackupTargetLocal';
 import {container} from 'tsyringe';
+import {BackupTargetLocal} from './BackupTargetLocal';
 
 use(chaiAsPromised);
 
@@ -31,7 +31,7 @@ describe('BackupTargetLocal', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), {
                     type: 'local',
                     name: 'test',
-                    dir: './.tmp/targets/test/'
+                    dir: './.tmp/targets/test/',
                 });
                 expect(target.backupDir).to.equal(Path.join(process.cwd(), '.tmp/targets/test'));
             });
@@ -41,14 +41,13 @@ describe('BackupTargetLocal', () => {
                 expect(target.backupDir).to.equal(Path.join(process.cwd(), '.tmp/targets/test'));
             });
 
-            it('should write the manifest to the fs', () => {
+            it('should write the manifest to the fs', async () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
-                target.init();
+                await target.init();
                 const readManifest = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '.tmp/targets/test/manifest.json'), {encoding: 'utf-8'}));
 
                 expect(readManifest).to.deep.equal(target.getManifest());
             });
-
 
         });
     });

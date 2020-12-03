@@ -1,4 +1,5 @@
-require: "reflect-metadata"
+require:
+  - "reflect-metadata"
+  - "test/mocha-hooks.ts"
 spec: 'src/**/*.spec.ts'
-file:
-- test/mocha-setup.ts
+color: true

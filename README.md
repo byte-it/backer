@@ -18,12 +18,45 @@ This method requires Backer to have access to the docker daemon itself via socke
 
 ### Static
 
+Basic configuration:
+```yaml
+tmpPath: '/var/tmp/backer'
+socketPath: '/var/run/docker.sock'
+targets: []
+```
+
 #### Targets
 Backup targets must be configured statically.
+Required configuration:
+```yaml
+targets:
+  - name: 'default'
+    type: 'local'
+```
 
 ##### Local
-```json
+Writes the backups to the local filesystem. Simple but not recommended.  
+```yaml
+targets:
+  - name: 'default'
+    type: 'local'
+    default: true
+    dir: '/var/opt/backer/local'
+```
 
+##### S3
+Writes the backups to AWS S3 or any compatible service like minio. 
+```yaml
+
+targets:
+  - name: 'default'
+    type: 's3'
+    bucket: 'test'
+    s3Client:
+        endpoint: 'http://minio:9000'
+        accessKeyId: 'minio'
+        secretAccessKey: 'minio123'
+        s3ForcePathStyle: true
 ```
 
 ### Dynamic

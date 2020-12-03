@@ -1,3 +1,5 @@
+# Integration testing via docker to gain access to real resources (databases, s3 etc)
+# Since the limitation of 1 backup per container, we need to create multiple databases to test multiple targets
 version: '3'
 services:
   backer:
@@ -6,15 +8,42 @@ services:
       dockerfile: Dockerfile
     volumes:
     - "/var/run/docker.sock:/var/run/docker.sock"
-  db:
+    environment:
+      NODE_ENV: integration
+
+  mariadb_local:
     image: mariadb:latest
     labels:
-    - 'backer.type=mysql'
-    - 'backer.interval=* * * * *'
-    - 'backer.network=test_default'
-    - 'backer.mysql.user=Text:root'
-    - 'backer.mysql.password=Env:MYSQL_ROOT_PASSWORD'
-    - 'backer.mysql.database=Env:MYSQL_DATABASE'
+      backer.type: 'mysql'
+      backer.interval: '* * * * *'
+      backer.network: 'test_default'
+      backer.mysql.user: 'Text:root'
+      backer.mysql.password: 'Env:MYSQL_ROOT_PASSWORD'
+      backer.mysql.database: 'Env:MYSQL_DATABASE'
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
+
+  mariadb_s3:
+    image: mariadb:latest
+    labels:
+      backer.type: 'mysql'
+      backer.interval: '* * * * *'
+      backer.network: 'test_default'
+      backer.mysql.user: 'Text:root'
+      backer.mysql.password: 'Env:MYSQL_ROOT_PASSWORD'
+      backer.mysql.database: 'Env:MYSQL_DATABASE'
+      backer.target: 'minio'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+
+  minio:
+    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+    expose:
+    - "9000"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    entrypoint: sh
+    command: -c 'mkdir -p /data/test && /usr/bin/minio server /data'

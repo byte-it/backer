@@ -1,13 +1,13 @@
-import * as fs from 'fs';
+import {constants, existsSync, promises as fs} from 'fs';
 import * as makeDir from 'make-dir';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
-import {container, inject, injectable, registry} from 'tsyringe';
+import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
+import {BackupTargetBase} from './BackupTargetBase';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
-import Lifecycle from 'tsyringe/dist/typings/types/lifecycle';
-import {Config} from '../Config';
+import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 
 /**
  * The configuration of the BackupTargetLocal.
@@ -26,7 +26,7 @@ export interface IBackupTargetLocalConfig extends IBackupTargetConfig {
  *
  * @category BackupTarget
  */
-export class BackupTargetLocal implements IBackupTarget {
+export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget {
 
     /**
      * Factory
@@ -63,7 +63,8 @@ export class BackupTargetLocal implements IBackupTarget {
      * @param {winston.logger} logger The logger instance.
      * @param {IBackupTargetLocalConfig} config
      */
-    constructor(@inject('Logger') private logger: Logger, private config: IBackupTargetLocalConfig) {
+    constructor(@inject('Logger') logger: Logger, config: IBackupTargetLocalConfig) {
+        super(logger, config);
         if (Path.isAbsolute(config.dir)) {
             this._backupDir = String().replace(/\/+$/, '');
         } else {
@@ -80,60 +81,54 @@ export class BackupTargetLocal implements IBackupTarget {
     /**
      * @inheritDoc
      */
-    public async init() {
-        if (fs.existsSync(this._backupDir)) {
-            const manifestPath = Path.join(this._backupDir, 'manifest.json');
-            if (fs.existsSync(Path.join(this._backupDir, 'manifest.json'))) {
-                const readManifest = fs.readFileSync(manifestPath, {encoding: 'utf-8'});
-                if (typeof readManifest === 'string') {
-                    this._manifest = JSON.parse(readManifest) as IBackupManifest;
-                }
-            } else {
+    protected async isTargetWriteable(): Promise<boolean> {
+        if (existsSync(this._backupDir)) {
+            try {
+                await fs.access(this._backupDir, constants.W_OK);
+            } catch (e) {
                 this.logger.log({
-                    level: 'info',
-                    message: `BackupTarget ${this.config.name}: The configured directory doesn't include a manifest file, a new one will be created`,
+                    level: 'error',
+                    message: `BackupTarget ${this.config.name}: The directory ${this._backupDir} isn't writeable.`,
                     targetName: this.config.name,
                     targetType: this.config.type,
                 });
-
-                this._manifest = {
-                    backups: [],
-                    target: {
-                        name: this.config.name,
-                        type: 'local',
-                    },
-                };
-
-                this.writeManifest();
+                return false;
             }
-        } else {
-            this.logger.log({
-                level: 'error',
-                message: `BackupTarget ${this.config.name}: The directory ${this._backupDir} doesn't exist.`,
-                targetName: this.config.name,
-                targetType: this.config.type,
-            });
-            throw new Error('Dir does nit exist');
+            return true;
         }
+        this.logger.log({
+            level: 'error',
+            message: `BackupTarget ${this.config.name}: The directory ${this._backupDir} doesn't exist.`,
+            targetName: this.config.name,
+            targetType: this.config.type,
+        });
+        return false;
     }
 
     /**
-     * @inheritdoc
-     * @see IBackupTarget#addBackup
+     * @inheritDoc
      */
-    public async addBackup(tmpPath: string, name: string, manifest: IBackupManifestBackup): Promise<void> {
-        if (!(fs.existsSync(tmpPath) && fs.lstatSync(tmpPath).isFile())) {
-            throw new Error(`File ${tmpPath} doesn't exist`);
-        }
+    protected doesFileExistOnTarget(path: string): Promise<boolean> {
+        throw new Error('Method not implemented.');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected async moveBackupToTarget(
+        tmpPath: string,
+        name: string,
+        manifest: IBackupManifestBackup,
+    ): Promise<IBackupManifestBackup> {
 
         const containerPath = Path.join(this._backupDir, manifest.containerName);
         const filePath = Path.join(containerPath, name);
 
-        if (fs.existsSync(filePath)) {
+        if (existsSync(filePath)) {
             throw new Error(`File ${filePath} already exists`);
         }
 
-        if (!fs.existsSync(containerPath)) {
+        if (!existsSync(containerPath)) {
             await makeDir(containerPath);
         }
 
@@ -142,44 +137,37 @@ export class BackupTargetLocal implements IBackupTarget {
         // The current filePath maybe absolute or relative to the cwd. We want the path to be relative to the manifest.
         manifest.path = Path.relative(this._backupDir, filePath);
 
-        this.addBackupToManifest(manifest);
+        return manifest;
+    }
 
-        return;
+    /**
+     * @inheritDoc
+     * @todo Implement.
+     */
+    protected deleteBackupFromTarget(manifest: IBackupManifestBackup): Promise<void> {
+        throw new Error('Method not implemented.');
     }
 
     /**
      * @inheritDoc
      */
-    public async getAllBackups(): Promise<IBackupManifestBackup[]> {
-        return this._manifest.backups;
+    protected async readManifestFromTarget(): Promise<IBackupManifest> {
+        const manifestPath = Path.join(this._backupDir, 'manifest.json');
+        try {
+            const readManifest = await fs.readFile(manifestPath, {encoding: 'utf-8'});
+            if (typeof readManifest === 'string') {
+                return JSON.parse(readManifest) as IBackupManifest;
+            }
+        } catch (e) {
+            throw new ManifestNotFound();
+        }
     }
 
     /**
      * @inheritDoc
      */
-    public async removeBackup(name: string, containerName: string): Promise<void> {
-        // @todo: Implement
-        return;
+    protected async writeManifestToTarget(): Promise<void> {
+        await fs.writeFile(Path.join(this._backupDir, 'manifest.json'), JSON.stringify(this.manifest), {flag: 'w+'});
     }
-
-    public getManifest(): IBackupManifest {
-        return this._manifest;
-    }
-
-    /**
-     * Add the backupManifest to the list of backups hold by the manifest.
-     * @param backupManifest
-     * @protected
-     */
-    protected addBackupToManifest(backupManifest: IBackupManifestBackup) {
-        this._manifest.backups.push(backupManifest);
-
-        this.writeManifest();
-    }
-
-    protected writeManifest() {
-        fs.writeFileSync(Path.join(this._backupDir, 'manifest.json'), JSON.stringify(this._manifest), {flag: 'w+'});
-    }
-
 
 }

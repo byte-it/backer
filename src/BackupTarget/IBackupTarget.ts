@@ -50,15 +50,14 @@ export interface IBackupTarget {
      * @method
      * @return  {Promise<IBackupManifestBackup[]>}
      */
-    getAllBackups(): Promise<IBackupManifestBackup[]>;
+    getAllBackups(): IBackupManifestBackup[];
 
     /**
      * Removes the named backup from the remote.
      * @method
-     * @param name {string} The full name of the backup file as defined in the manifest
-     * @param containerName {string} The name of the container the backup belongs to
+     * @param {IBackupManifestBackup} manifest
      */
-    removeBackup(name: string, containerName: string): Promise<void>;
+    deleteBackup(manifest: IBackupManifestBackup): Promise<void>;
 
     /**
      * Copy the named backup to a remote.

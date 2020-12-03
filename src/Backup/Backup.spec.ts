@@ -6,16 +6,22 @@ import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {Backup} from './Backup';
+import {BackupTargetLocal} from '../BackupTarget/BackupTargetLocal';
+import {IConfig} from 'config';
 
 beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
-
     await container.resolve<BackupTargetProvider>(BackupTargetProvider).init();
 
 });
 describe('Backup', () => {
     describe('#fromContainer()', () => {
-        it('should read the labels correctly', () => {
+        it('should read the labels correctly', async () => {
+            container.registerInstance('target.default', await BackupTargetLocal.createInstance({
+                name: 'test',
+                type: 'local',
+                dir: Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/targets/default'),
+            }));
             // @ts-ignore
             const testContainer = {
                 Config: {
@@ -52,7 +58,12 @@ describe('Backup', () => {
             backup.stop();
         });
 
-        it('should apply the default labels correctly', () => {
+        it('should apply the default labels correctly', async () => {
+            container.registerInstance('target.default', await BackupTargetLocal.createInstance({
+                name: 'test',
+                type: 'local',
+                dir: Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/targets/default'),
+            }));
             const testContainer = {
                 Config: {
                     Labels: {
@@ -102,6 +113,30 @@ describe('Backup', () => {
             // @ts-ignore
             expect(() => Backup.fromContainer(testContainer)).to.throw(Error);
         });
+        it('should throw an error if the target doesn\'t exists', () => {
+            const testContainer = {
+                Config: {
+                    Labels: {
+                        'backer.mysql.database': 'test',
+                        'backer.mysql.password': '1234',
+                        'backer.mysql.user': 'root',
+                        'backer.network': 'test',
+                        'backer.type': 'mysql',
+                        'backer.target': 'idonotexist',
+                    },
+                },
+                Name: 'test',
+                NetworkSettings: {
+                    Networks: {
+                        test: {
+                            IPAddress: '1.1.1.1',
+                        },
+                    },
+                },
+            };
+            // @ts-ignore
+            expect(() => Backup.fromContainer(testContainer)).to.throw(Error);
+        });
     });
     describe('#createName()', () => {
         it('should replace DATE and CONTAINER_NAME correctly', () => {
@@ -111,7 +146,7 @@ describe('Backup', () => {
             const date = moment();
 
             const backup = new Backup(
-                container.resolve('config'),
+                container.resolve('Config'),
                 container.resolve('Logger'),
                 containerId,
                 containerName,
@@ -123,8 +158,6 @@ describe('Backup', () => {
                 }, null, '0 0 * * *', '0', pattern);
             const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}.sql`;
             expect(backup.createName(date)).to.equal(expectedName);
-
-
             backup.stop();
         });
     });

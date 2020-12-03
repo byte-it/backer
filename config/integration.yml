@@ -1,0 +1,13 @@
+targets:
+- name: 'default'
+  type: 'local'
+  dir: '/var/opt/backer/local'
+  default: true
+- name: 'minio'
+  type: 's3'
+  bucket: 'test'
+  s3Client:
+    endpoint: 'http://minio:9000'
+    accessKeyId: 'minio'
+    secretAccessKey: 'minio123'
+    s3ForcePathStyle: true

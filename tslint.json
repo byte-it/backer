@@ -8,7 +8,6 @@
     "rules": {
         "quotemark": [true, "single", "jsx-double"],
         "variable-name": [true, "allow-leading-underscore"],
-        "no-console": false,
         "object-literal-sort-keys": false
     },
     "rulesDirectory": []

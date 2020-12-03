@@ -13,7 +13,7 @@ import {IConfig} from 'config';
  * Mainly handles the initiation of all needed services.
  */
 async function bootstrap() {
-    container.registerInstance<IConfig>('config', config);
+    container.registerInstance<IConfig>('Config', config);
 
     const logger = winston.createLogger({
         transports: [
@@ -30,7 +30,7 @@ async function bootstrap() {
 
     container.registerInstance<Dockerode>(
         Dockerode,
-        new Dockerode({socketPath: container.resolve<IConfig>('config').get('socketPath')}),
+        new Dockerode({socketPath: container.resolve<IConfig>('Config').get('socketPath')}),
     );
 
     const targetProvider = container.resolve(BackupTargetProvider);
@@ -40,4 +40,4 @@ async function bootstrap() {
     await backupManager.init();
 }
 
-bootstrap();
+bootstrap().then(() => {});

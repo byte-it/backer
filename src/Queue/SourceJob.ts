@@ -2,6 +2,9 @@ import {IBackupSource} from '../BackupSource/IBackupSource';
 import {Job} from './Job';
 import {IBackupManifestBackup} from '../IBackupManifest';
 
+/**
+ * @todo TEST!
+ */
 export class SourceJob extends Job {
 
     private readonly _source: IBackupSource;

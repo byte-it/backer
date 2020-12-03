@@ -4,6 +4,7 @@ import {Job} from './Job';
 /**
  * Dead simple queue
  * Just execute the incoming tasks
+ * @todo TEST
  */
 @singleton()
 export class Queue {

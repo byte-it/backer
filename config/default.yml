@@ -1,8 +1,8 @@
-tmpPath: './tmp/'
+tmpPath: '/var/tmp/backer'
 defaultTarget: 'local'
 socketPath: '/var/run/docker.sock'
 targets:
 - name: 'default'
   type: 'local'
-  dir: './.tmp/targets/local'
+  dir: '/var/opt/backer/local'
   default: true

@@ -1,0 +1,6 @@
+tmpPath: './tmp/'
+targets:
+- name: 'default'
+  type: 'local'
+  dir: './.tmp/targets/local'
+  default: true

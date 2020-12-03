@@ -289,7 +289,7 @@ export class BackupSourceMysql implements IBackupSource {
                 }
             }
         }
-        const tmpPath = container.resolve<IConfig>('config').get('tmpPath') as string;
+        const tmpPath = container.resolve<IConfig>('Config').get('tmpPath') as string;
         const tmpFile = Path.isAbsolute(tmpPath) ? Path.join(tmpPath, name) : Path.join(process.cwd(), tmpPath, name);
         cmd += ` > ${tmpFile}`;
 

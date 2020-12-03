@@ -1,10 +1,10 @@
-import {container, DependencyContainer, inject, singleton} from 'tsyringe';
+import {IConfig} from 'config';
+import {container, inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
-import {Config} from '../Config';
 import './BackupTargetLocal';
 import {BackupTargetLocal, IBackupTargetLocalConfig} from './BackupTargetLocal';
-import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
+import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 
 /**
  * The BackupTargetProvider manages all available and configured BackupTargets.
@@ -21,7 +21,7 @@ export class BackupTargetProvider {
      */
     private _defaultTarget: IBackupTarget;
 
-    constructor(@inject(Config) private config: Config, @inject('Logger') private logger: Logger) {
+    constructor(@inject('Config') private config: IConfig, @inject('Logger') private logger: Logger) {
     }
 
     public async init() {
@@ -42,15 +42,12 @@ export class BackupTargetProvider {
                 container.registerInstance(['target', target.name].join('.'), instance);
                 if (target.default === true) {
                     container.registerInstance(['target', 'default'].join('.'), instance);
-                    console.log('Add default');
                 }
                 this.logger.log({
                     level: 'info',
                     message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
                 });
-            } catch (e) {
-            }
-
+            } catch (e) {}
         }
     }
 

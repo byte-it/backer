@@ -1,6 +1,8 @@
 import {expect} from 'chai';
 import * as Path from 'path';
 import {BackupSourceMysql} from './BackupSourceMysql';
+import {container} from 'tsyringe';
+import {IConfig} from 'config';
 
 describe('BackupSourceMysql', () => {
     describe('#fromContainer()', () => {
@@ -145,7 +147,8 @@ describe('BackupSourceMysql', () => {
                 'thedb',
             );
             const {cmd} = source.createDumpCmd('thedumpname.sql');
-            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" thedb > ${process.cwd()}/tmp/thedumpname.sql`;
+            const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
+            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" thedb > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
         });
         it('should handle multiple databases correctly', () => {
@@ -156,7 +159,8 @@ describe('BackupSourceMysql', () => {
                 ['thedb1', 'thedb2'],
             );
             const {cmd} = source.createDumpCmd('thedumpname.sql');
-            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --databases thedb1 thedb2 > ${process.cwd()}/tmp/thedumpname.sql`;
+            const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
+            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --databases thedb1 thedb2 > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
         });
         it('should add the an absolute path to the command', () => {

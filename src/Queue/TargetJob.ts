@@ -5,6 +5,9 @@ import {IBackupTarget} from '../BackupTarget/IBackupTarget';
 import {IBackupManifestBackup} from '../IBackupManifest';
 import {Job} from './Job';
 
+/**
+ * @todo TEST!
+ */
 export class TargetJob extends Job {
 
     private readonly _target: IBackupTarget;
@@ -21,9 +24,9 @@ export class TargetJob extends Job {
     }
 
     public async execute() {
-        const tmpPath = container.resolve<IConfig>('config').get('tmpPath') as string;
+        const tmpPath = container.resolve<IConfig>('Config').get('tmpPath') as string;
         const tmpFile = Path.isAbsolute(tmpPath) ?
-            Path.join(tmpPath, name) :
+            Path.join(tmpPath, this._name) :
             Path.join(process.cwd(), tmpPath, this._name);
         return this._target.addBackup(tmpFile, this._name, this._manifest);
     }

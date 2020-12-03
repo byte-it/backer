@@ -167,7 +167,7 @@ export class Backup {
         });
 
         return new Backup(
-            container.resolve('config'),
+            container.resolve('Config'),
             container.resolve('Logger'),
             inspectInfo.Id,
             containerName,
@@ -233,7 +233,7 @@ export class Backup {
      * @param {string} namePattern
      */
     constructor(
-        @inject('config') private config: IConfig,
+        @inject('Config') private config: IConfig,
         @inject('Logger') private logger: Logger,
         containerId: string,
         containerName: string,
@@ -354,8 +354,10 @@ export class Backup {
                 level: 'error',
                 message: 'Backup target encountered an error',
                 error: e,
+                errorMessage: e.message,
                 ...backupMeta,
             });
+            return;
         }
 
         this.log(`Backup ${backupName} transferred to target`);

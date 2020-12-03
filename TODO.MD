@@ -3,9 +3,8 @@
 ## Basic features
 - [x] Implement basic cron handling
 - [x] Implement backup tasks (dump & copying to target in job queue)
-- [ ] Implement s3 target
+- [x] Implement s3 target
 - [x] Implement mysql source
-- [ ] Implement postgres source
 - [ ] Implement retention with count or date
 - [x] Use winston as logging framework
 - [ ] Create compose test setup
@@ -13,14 +12,18 @@
 - [x] Configuration file -> implemented with 'config'
 - [x] static configured targets
 - [ ] replace moment
-- [ ] Static pre configuration for sources
 - [ ] Implement queue locking per source
 - [ ] Switch to proper queue (Framework to be defined)
 - [ ] Docs with Slate
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
+- [ ] Give backup manifest uuids via file hash or something
+- [ ] Unify file access for testing
 
 ## Nice to have
+- [ ] "File source" to backup Docker Volumes
+- [ ] Static pre configuration for sources
+- [ ] Implement postgres source
 - [ ] REST-API (express http/socket)
 - [ ] CLI via socket (oclif)
 - [ ] Web Interface (vue + tailwind)
@@ -28,5 +31,9 @@
 - [ ] Encryption (middleware stack for backups?)
 - [ ] Rollback (triggering via api)
 - [ ] Rollback tests
-- [ ] Integrity checks (File hash)
+- [ ] Integrity checks (File hash) -> write hash to manifest
 - [ ] Job queue priority
+- [ ] Recover from failure
+- [ ] Prometheus export
+- [ ] Failure Reporting
+- [ ] S3 Target Path prefix
