@@ -5,7 +5,7 @@
 - [x] Implement backup tasks (dump & copying to target in job queue)
 - [x] Implement s3 target
 - [x] Implement mysql source
-- [ ] Implement retention with count or date
+- [x] Implement retention with count
 - [x] Use winston as logging framework
 - [ ] Create compose test setup
 - [x] Switch to dependency injection/service container lib
@@ -37,3 +37,4 @@
 - [ ] Prometheus export
 - [ ] Failure Reporting
 - [ ] S3 Target Path prefix
+- [ ] More complex retention schedules

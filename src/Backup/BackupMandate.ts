@@ -17,7 +17,7 @@ import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
 
 /**
- * BackupMandate class
+ * The BackupMandate represents the mandate to create and manage backups for 1 container.
  */
 export class BackupMandate {
     /**
@@ -64,7 +64,7 @@ export class BackupMandate {
      * The retention
      * @type {string}
      */
-    get retention(): string {
+    get retention(): number {
         return this._retention;
     }
 
@@ -84,7 +84,7 @@ export class BackupMandate {
             target: Joi.string(),
             type: Joi.string().required(),
             interval: Joi.string(),
-            retention: Joi.string(),
+            retention: Joi.number(),
             namePattern: Joi.string(),
             network: Joi.string().required(),
         }).options({
@@ -174,7 +174,7 @@ export class BackupMandate {
             source,
             target,
             labels.interval,
-            labels.retention,
+            parseInt(labels.retention),
             labels.namePattern,
         );
     }
@@ -206,7 +206,7 @@ export class BackupMandate {
     /**
      * How long the backups should be retained
      */
-    private readonly _retention: string;
+    private readonly _retention: number;
 
     /**
      * The format of the file name of the backups
@@ -240,7 +240,7 @@ export class BackupMandate {
         source: IBackupSource,
         target: IBackupTarget,
         interval: string,
-        retention: string,
+        retention: number,
         namePattern: string,
     ) {
         this._containerId = containerId;
@@ -293,33 +293,29 @@ export class BackupMandate {
 
     /**
      * Calculates which backups can be delete with the current retention settings.
-     * @param manifest A list of the all backup manifest currently stored on the target for this backup.
+     * @param manifests A list of the all backup manifest currently stored on the target for this backup.
      * @return A list of all backups
      */
-    public calculateRetention(manifest: IBackupManifestBackup[]): IBackupManifestBackup[] {
-        return [];
-    }
-
-    //
-    /**
-     * @param log
-     * @protected
-     */
-    protected log(log: string | LogEntry) {
-        if (typeof log === 'string') {
-            this.logger.info(log, this.containerId, this.containerName);
-        } else {
-            log.containerId = this.containerId;
-            log.containerName = this.containerName;
-            this.logger.log(log);
+    public calculateRetention(manifests: IBackupManifestBackup[]): IBackupManifestBackup[] {
+        if (manifests.length <= this.retention) {
+            return [];
         }
+        // Create a copy to prevent changes to the input array
+        const sortedManifests = [...manifests];
+        // Sort by increasing date
+        sortedManifests.sort((a, b) => {
+            return a.date < b.date ? 1 : -1;
+        });
+        // Return the oldest
+        return sortedManifests.splice(this._retention);
     }
 
-    //
     /**
      * Start a single backup process
+     *
+     * @todo TEST!
      */
-    private async backup() {
+    public async backup() {
         const backupName = this.createName();
 
         const backupMeta = {
@@ -370,7 +366,38 @@ export class BackupMandate {
         }
 
         this.log(`Backup ${backupName} transferred to target`);
-        // @todo: Do rention calculation here
+
+        const manifests = this._target.getAllBackups().filter(
+            (currManifest) => manifest.containerName === this._containerName,
+        );
+        for (const manifestToDelete of this.calculateRetention(manifests)) {
+            try {
+                await this._target.deleteBackup(manifestToDelete);
+                this.log(`Backup ${manifestToDelete.name} deleted due to retention limitation`);
+            } catch (e) {
+                this.log({
+                    level: 'error',
+                    message: `Deletion of backup ${manifestToDelete.name} failed`,
+                    error: e,
+                    errorMessage: e.message,
+                    ...manifestToDelete,
+                });
+            }
+        }
         return;
+    }
+
+    /**
+     * @param log
+     * @protected
+     */
+    protected log(log: string | LogEntry) {
+        if (typeof log === 'string') {
+            this.logger.info(log, this.containerId, this.containerName);
+        } else {
+            log.containerId = this.containerId;
+            log.containerName = this.containerName;
+            this.logger.log(log);
+        }
     }
 }

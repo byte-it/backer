@@ -22,7 +22,7 @@
     "config": "^3.3.2",
     "cron": "^1.8.2",
     "docker-events": "0.0.2",
-    "dockerode": "^2.5.8",
+    "dockerode": "^3.2.1",
     "dot-object": "^1.9.0",
     "joi": "^17.2.1",
     "make-dir": "^3.1.0",
