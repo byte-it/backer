@@ -3,13 +3,15 @@ import S3 = require('aws-sdk/clients/s3');
 import * as fs from 'fs';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
+import {IBackupTargetManifest, IBackupManifest} from '../IBackupManifest';
 import {BackupTargetBase} from './BackupTargetBase';
 import {IBackupTargetLocalConfig} from './BackupTargetLocal';
 import {FileNotAccessible} from './Exceptions/FileNotAccessible';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
+import {ManifestNotFound} from './Exceptions/ManifestNotFound';
+import instance from 'tsyringe/dist/typings/dependency-container';
 
 /**
  *
@@ -152,8 +154,8 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     public async moveBackupToTarget(
         tmpPath: string,
         name: string,
-        manifest: IBackupManifestBackup,
-    ): Promise<IBackupManifestBackup> {
+        manifest: IBackupManifest,
+    ): Promise<IBackupManifest> {
 
         const finalPath = `${manifest.containerName}/${name}`;
         try {
@@ -173,7 +175,7 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     /**
      * @inheritDoc
      */
-    public async deleteBackupFromTarget(manifest: IBackupManifestBackup): Promise<void> {
+    public async deleteBackupFromTarget(manifest: IBackupManifest): Promise<void> {
         try {
             await this._s3Client.deleteObject({
                 Bucket: this._bucket,
@@ -188,17 +190,31 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     /**
      * @inheritDoc
      */
-    public async readManifestFromTarget(): Promise<IBackupManifest> {
+    public async readManifestFromTarget(): Promise<IBackupTargetManifest> {
+        let body = null;
         try {
-            const {Body} = await this._s3Client.getObject({
+            const reponse = await this._s3Client.getObject({
                 Bucket: this._bucket,
                 Key: BackupTargetS3.manifestName,
             }).promise();
-            if (typeof Body === 'string') {
-                return JSON.parse(Body as string) as IBackupManifest;
-            }
+            body = reponse.Body;
         } catch (e) {
-            this.handleAWSError(e);
+            throw new ManifestNotFound();
+        }
+
+        let manifestString;
+        if(typeof body === 'object'){
+            manifestString = body.toString('utf8');
+        }
+        else{
+            manifestString = body;
+        }
+
+        try{
+            return JSON.parse(body) as IBackupTargetManifest;
+        }
+        catch (e) {
+            throw new ManifestNotFound();
         }
     }
 

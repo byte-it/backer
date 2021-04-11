@@ -7,6 +7,7 @@ import {BackupManager} from './BackupManager';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import * as config from 'config';
 import {IConfig} from 'config';
+import {Queue} from './Queue/Queue';
 
 /**
  * Bootstraps the application.
@@ -38,6 +39,9 @@ async function bootstrap() {
 
     const backupManager = container.resolve(BackupManager);
     await backupManager.init();
+
+    const queue = container.resolve(Queue);
+    await queue.start();
 }
 
 bootstrap().then(() => {});

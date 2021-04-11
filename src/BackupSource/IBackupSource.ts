@@ -7,6 +7,8 @@
  * // In addition all implementations of IBackupSource must have a static factory method:
  * public static fromContainer(inspectInfo: ContainerInspectInfo): IBackupSource {}}
  */
+import {IBackupManifest} from '../IBackupManifest';
+
 export interface IBackupSource {
 
   /**
@@ -25,7 +27,7 @@ export interface IBackupSource {
    * The backup file must be written to the temporary directory defined in the config.
    *
    * @async
-   * @param {string} name The complete file name for the backup file.
+   * @param manifest
    */
-  backup(name: string): Promise<string>;
+  backup(manifest: IBackupManifest): Promise<IBackupManifest>;
 }

@@ -180,7 +180,7 @@ describe('BackupMandate', () => {
                         return '.sql';
                     },
                 }, null, '0 0 * * *', '0', pattern);
-            const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}.sql`;
+            const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}`;
             expect(backup.createName(date)).to.equal(expectedName);
             backup.stop();
         });

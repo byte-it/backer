@@ -1,23 +1,16 @@
 import {IBackupSource} from '../BackupSource/IBackupSource';
+import {IBackupManifest} from '../IBackupManifest';
 import {Job} from './Job';
-import {IBackupManifestBackup} from '../IBackupManifest';
+import {BackupMandate} from '../Backup/BackupMandate';
 
-/**
- * @todo TEST!
- */
+
 export class SourceJob extends Job {
 
-    private readonly _source: IBackupSource;
-
-    private readonly _name: string;
-
-    constructor(source: IBackupSource, name: string, manifest: IBackupManifestBackup) {
-        super();
-        this._source = source;
-        this._name = name;
-    }
-
-    public async execute() {
-        return await this._source.backup(this._name);
+    /**
+     * @todo add logging
+     * @param manifest
+     */
+    public async execute(manifest): Promise<IBackupManifest> {
+        return await this._mandate.source.backup(manifest);
     }
 }

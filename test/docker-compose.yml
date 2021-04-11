@@ -3,6 +3,7 @@
 version: '3'
 services:
   backer:
+    image: backer:test
     build:
       context: ../.
       dockerfile: Dockerfile

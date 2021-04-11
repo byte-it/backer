@@ -1,11 +1,32 @@
+export interface IBackupManifestStep {
+    /**
+     * Identifier of the processor for this step
+     */
+    processor: string;
+    /**
+     * The name of the file produced by this step
+     */
+    fileName: string;
+    /**
+     * The full uri of the file produced by this step
+     */
+    uri: string;
+    /**
+     * Contains optional metadata provided by the source or target
+     */
+    optional?: {
+        [key: string]: any;
+    };
+}
+
 /**
  * Represents one backup in the manifest
  * @category BackupTarget
  */
-export interface IBackupManifestBackup {
+export interface IBackupManifest {
 
     /**
-     * The name of the backup it self defined by the used name pattern. The name includes the file suffix.
+     * The name of the backup it self defined by the used name pattern. The name excludes the file suffix.
      */
     name: string;
     /**
@@ -19,12 +40,17 @@ export interface IBackupManifestBackup {
     sourceName: string;
 
     /**
+     * A list of all performend steps in the correct order
+     */
+    steps: IBackupManifestStep[];
+
+    /**
      * Time of the creation of the backup
      */
     date: string | Date;
 
     /**
-     * Path of the backup file relative to the manifest file
+     * Path of the backup file relative to the manifest file on the target
      */
     path?: string;
 
@@ -57,7 +83,7 @@ export interface IBackupManifestTarget {
  * It ist saved alongside the backups itself.
  * @category BackupTarget
  */
-export interface IBackupManifest {
+export interface IBackupTargetManifest {
     /**
      * The TargetManifest
      */
@@ -65,7 +91,7 @@ export interface IBackupManifest {
 
     /**
      * A list of all done backups by the target
-     * @type {IBackupManifestBackup[]}
+     * @type {IBackupManifest[]}
      */
-    backups: IBackupManifestBackup[];
+    backups: IBackupManifest[];
 }

@@ -4,10 +4,11 @@ import * as moveFile from 'move-file';
 import * as Path from 'path';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
+import {IBackupTargetManifest, IBackupManifest} from '../IBackupManifest';
 import {BackupTargetBase} from './BackupTargetBase';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
+import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 
 /**
  * The configuration of the BackupTargetLocal.
@@ -56,7 +57,7 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
     /**
      * @private The manifest managed by this target instance
      */
-    private _manifest: IBackupManifest;
+    private _manifest: IBackupTargetManifest;
 
     /**
      * @constructor
@@ -118,14 +119,14 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
     protected async moveBackupToTarget(
         tmpPath: string,
         name: string,
-        manifest: IBackupManifestBackup,
-    ): Promise<IBackupManifestBackup> {
+        manifest: IBackupManifest,
+    ): Promise<IBackupManifest> {
 
         const containerPath = Path.join(this._backupDir, manifest.containerName);
         const filePath = Path.join(containerPath, name);
 
         if (existsSync(filePath)) {
-            throw new Error(`File ${filePath} already exists`);
+            throw new FileNotWriteable(`File ${filePath} already exists`);
         }
 
         if (!existsSync(containerPath)) {
@@ -142,21 +143,21 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
 
     /**
      * @inheritDoc
-     * @todo Implement.
      */
-    protected deleteBackupFromTarget(manifest: IBackupManifestBackup): Promise<void> {
-        throw new Error('Method not implemented.');
+    protected async deleteBackupFromTarget(manifest: IBackupManifest): Promise<void> {
+        const path = Path.join(this._backupDir, manifest.path);
+        await fs.rm(path);
     }
 
     /**
      * @inheritDoc
      */
-    protected async readManifestFromTarget(): Promise<IBackupManifest> {
+    protected async readManifestFromTarget(): Promise<IBackupTargetManifest> {
         const manifestPath = Path.join(this._backupDir, 'manifest.json');
         try {
             const readManifest = await fs.readFile(manifestPath, {encoding: 'utf-8'});
             if (typeof readManifest === 'string') {
-                return JSON.parse(readManifest) as IBackupManifest;
+                return JSON.parse(readManifest) as IBackupTargetManifest;
             }
         } catch (e) {
             throw new ManifestNotFound();

@@ -3,8 +3,8 @@
  * It acts as filesystem abstraction layer to the {@link Backup} by providing
  * the needed methods for adding, listing and removing backups.
  */
+import {IBackupTargetManifest} from '../IBackupManifest';
 import {IBackupManifest} from '../IBackupManifest';
-import {IBackupManifestBackup} from '../IBackupManifest';
 
 /**
  * The configuration object used to initialize the target. Each BackupTarget implementation can extend this interface
@@ -48,31 +48,29 @@ export interface IBackupTarget {
     /**
      * List all backups on the remote
      * @method
-     * @return  {Promise<IBackupManifestBackup[]>}
+     * @return  {Promise<IBackupManifest[]>}
      */
-    getAllBackups(): IBackupManifestBackup[];
+    getAllBackups(): IBackupManifest[];
 
     /**
      * Removes the named backup from the remote.
      * @method
-     * @param {IBackupManifestBackup} manifest
+     * @param {IBackupManifest} manifest
      */
-    deleteBackup(manifest: IBackupManifestBackup): Promise<void>;
+    deleteBackup(manifest: IBackupManifest): Promise<void>;
 
     /**
      * Copy the named backup to a remote.
      * @method
      * @async
-     * @param {string} tmpPath The absolute path to the backup on the local file system
-     * @param {string} name The filename to be used in the final destination including the file suffix
-     * @param {IBackupManifestBackup} manifest The manifest of the current backup
+     * @param {IBackupManifest} manifest The manifest of the current backup
      * @return Promise
      */
-    addBackup(tmpPath: string, name: string, manifest: IBackupManifestBackup): Promise<Error | void>;
+    addBackup(manifest: IBackupManifest): Promise<Error | void>;
 
     /**
      * @method
-     * @return {IBackupManifest} The backup manifest managed by this target.
+     * @return {IBackupTargetManifest} The backup manifest managed by this target.
      */
-    getManifest(): IBackupManifest;
+    getManifest(): IBackupTargetManifest;
 }

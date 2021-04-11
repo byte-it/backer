@@ -1,8 +1,10 @@
 import {existsSync, lstatSync, PathLike} from 'fs';
+import * as Path from 'path';
 import {inject, injectable} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupManifest, IBackupManifestBackup} from '../IBackupManifest';
+import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {IBackupTargetS3Config} from './BackupTargetS3';
+import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 
@@ -15,7 +17,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
 
     public readonly abstract name: string;
 
-    protected manifest: IBackupManifest;
+    protected manifest: IBackupTargetManifest;
 
     protected constructor(@inject('logger') protected logger: Logger, protected config: IBackupTargetConfig) {
     }
@@ -32,6 +34,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                 targetName: this.config.name,
                 targetType: this.config.type,
             });
+            // @todo Error out and prevent target creation to prevent problems further down the road
             return;
         }
         try {
@@ -55,7 +58,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                 };
 
             } else {
-                // @todo Better error handling
+                this.logger.error(e.message);
             }
         }
         await this.writeManifestToTarget();
@@ -65,15 +68,15 @@ export abstract class BackupTargetBase implements IBackupTarget {
     /**
      * @inheritDoc
      */
-    public async addBackup(tmpPath: string, name: string, manifest: IBackupManifestBackup): Promise<void> {
-        if (!(existsSync(tmpPath) && lstatSync(tmpPath).isFile())) {
-            throw new Error(`File ${tmpPath} doesn't exist`);
+    public async addBackup(manifest: IBackupManifest): Promise<void> {
+        const lastStep = manifest.steps[manifest.steps.length - 1];
+
+        const {uri} = lastStep;
+        if (!(existsSync(uri) && lstatSync(uri).isFile())) {
+            throw new FileNotFound(`File ${uri} doesn't exist`);
         }
-        try {
-            manifest = await this.moveBackupToTarget(tmpPath, name, manifest);
-        } catch (e) {
-            // @todo handle error properly
-        }
+
+        manifest = await this.moveBackupToTarget(uri, Path.basename(uri), manifest);
 
         this.manifest.backups.push(manifest);
         await this.writeManifestToTarget();
@@ -82,21 +85,21 @@ export abstract class BackupTargetBase implements IBackupTarget {
     /**
      * @inheritDoc
      */
-    public getAllBackups(): IBackupManifestBackup[] {
+    public getAllBackups(): IBackupManifest[] {
         return this.manifest.backups;
     }
 
     /**
      * @inheritDoc
      */
-    public getManifest(): IBackupManifest {
+    public getManifest(): IBackupTargetManifest {
         return this.manifest;
     }
 
     /**
      * @inheritDoc
      */
-    public async deleteBackup(manifest: IBackupManifestBackup): Promise<void> {
+    public async deleteBackup(manifest: IBackupManifest): Promise<void> {
         await this.deleteBackupFromTarget(manifest);
 
         const index = this.manifest.backups.findIndex(
@@ -128,28 +131,28 @@ export abstract class BackupTargetBase implements IBackupTarget {
      *
      * @param {string} tmpPath The absolute path of the file in the local temp folder.
      * @param {string} name The final filename of the backup on the target. (Doesn't include the container prefix).
-     * @param {IBackupManifest} manifest The manifest shipped with backup.
+     * @param {IBackupTargetManifest} manifest The manifest shipped with backup.
      * @protected
      */
     protected abstract async moveBackupToTarget(
         tmpPath: string,
         name: string,
-        manifest: IBackupManifestBackup,
-    ): Promise<IBackupManifestBackup>;
+        manifest: IBackupManifest,
+    ): Promise<IBackupManifest>;
 
     /**
      * Removes the backup file from the target.
      *
-     * @param {IBackupManifest} manifest The manifest for the backup to delete
+     * @param {IBackupTargetManifest} manifest The manifest for the backup to delete
      * @protected
      */
-    protected abstract async deleteBackupFromTarget(manifest: IBackupManifestBackup): Promise<void>;
+    protected abstract async deleteBackupFromTarget(manifest: IBackupManifest): Promise<void>;
 
     /**
      * Reads the manifest from the target.
      * @protected
      */
-    protected abstract async readManifestFromTarget(): Promise<IBackupManifest>;
+    protected abstract async readManifestFromTarget(): Promise<IBackupTargetManifest>;
 
     /**
      * Writes the manifest to the target

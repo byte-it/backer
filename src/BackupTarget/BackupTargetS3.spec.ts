@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as Path from 'path';
 import * as rimraf from 'rimraf';
 import {container} from 'tsyringe';
-import {IBackupManifest} from '../IBackupManifest';
+import {IBackupTargetManifest} from '../IBackupManifest';
 import {BackupTargetLocal} from './BackupTargetLocal';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
 import {FileNotAccessible} from './Exceptions/FileNotAccessible';
@@ -65,7 +65,7 @@ describe('BackupTargetS3', () => {
             AWSMock.restore('S3');
         });
         it('should return a Promise resolving to an instance of BackupTargetS3', async () => {
-            const expectedManifest: IBackupManifest = {
+            const expectedManifest: IBackupTargetManifest = {
                 target: {
                     name: 's3',
                     type: 's3',
@@ -362,7 +362,7 @@ describe('BackupTargetS3', () => {
             bucket: 'test',
             s3Client: {},
         };
-        const expectedManifest: IBackupManifest = {
+        const expectedManifest: IBackupTargetManifest = {
             target: {
                 name: 's3',
                 type: 's3',
@@ -416,7 +416,7 @@ describe('BackupTargetS3', () => {
             bucket: 'test',
             s3Client: {},
         };
-        const expectedManifest: IBackupManifest = {
+        const expectedManifest: IBackupTargetManifest = {
             target: {
                 name: 's3',
                 type: 's3',

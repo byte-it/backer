@@ -9,12 +9,14 @@ import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {IBackupTarget} from '../BackupTarget/IBackupTarget';
-import {IBackupManifestBackup} from '../IBackupManifest';
+import {IBackupManifest} from '../IBackupManifest';
 import {Queue} from '../Queue/Queue';
 import {SourceJob} from '../Queue/SourceJob';
 import {TargetJob} from '../Queue/TargetJob';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
+import {JobTrain} from '../Queue/JobTrain';
+import {RetentionJob} from '../Queue/RetentionJob';
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
@@ -108,7 +110,7 @@ export class BackupMandate {
 
         logger.log({
             level: 'info',
-            message: `Container ${containerName}: Create backup`,
+            message: `Container ${containerName}: Create backup mandate`,
             ...defaultLogMeta,
         });
 
@@ -162,7 +164,7 @@ export class BackupMandate {
 
         logger.log({
             level: 'info',
-            message: `Container ${containerName}: Created backup`,
+            message: `Container ${containerName}: Created backup mandate`,
             ...defaultLogMeta,
         });
 
@@ -287,7 +289,6 @@ export class BackupMandate {
             const replacement = replacements[placeholder];
             name = name.replace(placeholder, replacement);
         }
-        name += this._source.getFileSuffix();
         return name;
     }
 
@@ -296,7 +297,7 @@ export class BackupMandate {
      * @param manifests A list of the all backup manifest currently stored on the target for this backup.
      * @return A list of all backups
      */
-    public calculateRetention(manifests: IBackupManifestBackup[]): IBackupManifestBackup[] {
+    public calculateRetention(manifests: IBackupManifest[]): IBackupManifest[] {
         if (manifests.length <= this.retention) {
             return [];
         }
@@ -308,6 +309,34 @@ export class BackupMandate {
         });
         // Return the oldest
         return sortedManifests.splice(this._retention);
+    }
+
+    /**
+     * Enforces the retention limit by deleting old backups
+     */
+    public async enforceRetention() {
+        const manifests = this._target.getAllBackups().filter(
+            (manifest) => manifest.containerName === this._containerName,
+        );
+        for (const manifestToDelete of this.calculateRetention(manifests)) {
+            try {
+                await this._target.deleteBackup(manifestToDelete);
+                this.log({
+                    level: 'info',
+                    message: `Backup ${manifestToDelete.name} deleted due to retention limitation`,
+                    backupName: manifestToDelete.name,
+                    ...this._defaultMeta,
+                });
+            } catch (e) {
+                this.log({
+                    level: 'error',
+                    message: `Deletion of backup ${manifestToDelete.name} failed`,
+                    error: e,
+                    errorMessage: e.message,
+                    ...manifestToDelete,
+                });
+            }
+        }
     }
 
     /**
@@ -325,66 +354,56 @@ export class BackupMandate {
             targetName: this._target.name,
         };
 
-        this.log({
-            level: 'info',
-            message: `Backup ${backupName} started`,
-            ...backupMeta,
-        });
 
-        const manifest: IBackupManifestBackup = {
+
+        const manifest: IBackupManifest = {
             name: backupName,
             containerName: this._containerName,
             sourceName: this._source.name,
             date: moment().format('YYYYMMDD-hh-mm'),
+            steps: [],
         };
 
+        // @todo Move queue to attribute
         const queue = container.resolve<Queue>(Queue);
 
-        try {
-            await queue.enqueue(new SourceJob(this._source, backupName, manifest));
-        } catch (e) {
-            this.log({
-                level: 'error',
-                message: 'Backup source encountered an error',
-                error: e.message,
-                ...backupMeta,
-            });
-            return;
-        }
-        this.log(`Backup ${backupName} created`);
-        try {
-            await queue.enqueue(new TargetJob(this._target, backupName, manifest));
-        } catch (e) {
-            this.log({
-                level: 'error',
-                message: 'Backup target encountered an error',
-                error: e,
-                errorMessage: e.message,
-                ...backupMeta,
-            });
-            return;
-        }
+        const train = new JobTrain(manifest);
+        train.enqueue(new SourceJob(this));
+        train.enqueue(new TargetJob(this));
+        train.enqueue(new RetentionJob(this));
 
-        this.log(`Backup ${backupName} transferred to target`);
+        queue.enqueueTrain(train);
 
-        const manifests = this._target.getAllBackups().filter(
-            (currManifest) => manifest.containerName === this._containerName,
-        );
-        for (const manifestToDelete of this.calculateRetention(manifests)) {
-            try {
-                await this._target.deleteBackup(manifestToDelete);
-                this.log(`Backup ${manifestToDelete.name} deleted due to retention limitation`);
-            } catch (e) {
-                this.log({
-                    level: 'error',
-                    message: `Deletion of backup ${manifestToDelete.name} failed`,
-                    error: e,
-                    errorMessage: e.message,
-                    ...manifestToDelete,
-                });
-            }
-        }
-        return;
+        this.log({
+            level: 'info',
+            message: `Backup ${backupName} enqueued`,
+            ...backupMeta,
+        });
+
+        // try {
+        // } catch (e) {
+        //     this.log({
+        //         level: 'error',
+        //         message: 'Backup source encountered an error',
+        //         error: e.message,
+        //         ...backupMeta,
+        //     });
+        //     return;
+        // }
+        // this.log(`Backup ${backupName} created`);
+        // try {
+        // } catch (e) {
+        //     this.log({
+        //         level: 'error',
+        //         message: 'Backup target encountered an error',
+        //         error: e,
+        //         errorMessage: e.message,
+        //         ...backupMeta,
+        //     });
+        //     return;
+        // }
+        //
+        // this.log(`Backup ${backupName} transferred to target`);
     }
 
     /**

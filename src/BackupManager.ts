@@ -43,7 +43,11 @@ export class BackupManager {
         return Promise.reject(error.message);
       }
     }
-    return Promise.reject();
+    this.logger.log({
+        level: 'debug',
+        message: `No backer config found for ${containerId}`
+    });
+    return Promise.reject(`No backer config found for ${containerId}`);
   }
 
   /**
@@ -86,11 +90,13 @@ export class BackupManager {
     this.logger.info('Read already started container');
     const containers = await this.docker.listContainers();
     for (const container of containers) {
-      if (container.Labels['backer.type']) {
-        this.createBackup(container.Id).catch(() => {
-          // Do nothing, just dont escalate that promise
-        });
-      }
+      this.logger.debug(`Found ${container.Id}`)
+      this.createBackup(container.Id).catch((e) => {
+        this.logger.log({
+          level: 'debug',
+          message: e,
+        })
+      });
     }
 
     this.logger.info('Start monitoring docker events');
@@ -103,10 +109,12 @@ export class BackupManager {
           if (event.Type === 'container') {
             event = event as IDockerContainerEvent;
             if (event.Action === 'start') {
-              this.createBackup(event.Actor.ID).catch(() => {
-                // Do nothing, just dont escalate that promise
+              this.createBackup(event.Actor.ID).catch((e) => {
+                this.logger.log({
+                  level: 'debug',
+                  message: e,
+                });
               });
-
             } else if (event.Action === 'stop') {
               this.stopBackup(event.Actor.ID);
             }
@@ -115,5 +123,4 @@ export class BackupManager {
       }
     });
   }
-
 }

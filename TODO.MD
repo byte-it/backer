@@ -7,13 +7,13 @@
 - [x] Implement mysql source
 - [x] Implement retention with count
 - [x] Use winston as logging framework
-- [ ] Create compose test setup
+- [ ] Create compose test setup => **started**
 - [x] Switch to dependency injection/service container lib
 - [x] Configuration file -> implemented with 'config'
 - [x] static configured targets
 - [ ] replace moment
 - [ ] Implement queue locking per source
-- [ ] Switch to proper queue (Framework to be defined)
+- [ ] Switch to proper queue (Framework to be defined) => **started**
 - [ ] Docs with Slate
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )

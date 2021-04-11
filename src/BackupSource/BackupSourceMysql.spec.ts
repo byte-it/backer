@@ -146,7 +146,7 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 'thedb',
             );
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname');
             const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
             const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" thedb > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
@@ -158,7 +158,7 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 ['thedb1', 'thedb2'],
             );
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname');
             const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
             const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --databases thedb1 thedb2 > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);

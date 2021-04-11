@@ -5,6 +5,9 @@ import * as Path from 'path';
 import * as rimraf from 'rimraf';
 import {container} from 'tsyringe';
 import {BackupTargetLocal} from './BackupTargetLocal';
+import {IBackupManifest} from '../IBackupManifest';
+import {FileNotFound} from './Exceptions/FileNotFound';
+import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 
 use(chaiAsPromised);
 
@@ -66,16 +69,23 @@ describe('BackupTargetLocal', () => {
         const createBackup = async () => {
             const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
             await target.init();
-            const manifest = {
+            const tmpPath = Path.join(process.cwd(), '/test/empty');
+            fs.writeFileSync(tmpPath, '');
+            const manifest: IBackupManifest = {
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
+                steps: [
+                    {
+                        processor: 'test',
+                        uri: tmpPath,
+                        fileName: Path.basename(tmpPath)
+                    }
+                ]
             };
 
-            const tmpPath = Path.join(process.cwd(), '/test/empty');
-            fs.writeFileSync(tmpPath, '');
-            await target.addBackup(tmpPath, 'empty', manifest);
+            await target.addBackup(manifest);
 
             return {
                 target,
@@ -126,31 +136,44 @@ describe('BackupTargetLocal', () => {
         it('should throw an error if the tmpFile doesn\'t exist', async () => {
             const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
 
-            const manifest = {
+            const manifest: IBackupManifest = {
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
+                steps: [{
+                    processor: 'test',
+                    uri: `${process.cwd()}/idonotexist`,
+                    fileName: 'test'
+                }]
             };
 
-            return expect(target.addBackup(`${process.cwd()}/idonotexist`, 'test', manifest)).to.be.rejectedWith(Error);
+            return expect(target.addBackup(manifest)).to.be.rejectedWith(FileNotFound);
         });
 
         it('should throw an error if the target file already exists', async () => {
             const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
 
-            const manifest = {
-                name: 'test',
+            const tmpPath = Path.join(process.cwd(), '/test/empty');
+
+            const manifest: IBackupManifest = {
+                name: 'empty',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
+                steps: [
+                    {
+                        processor: 'test',
+                        uri: tmpPath,
+                        fileName: 'test'
+                    }
+                ]
             };
 
-            const tmpPath = Path.join(process.cwd(), '/test/empty');
             fs.writeFileSync(tmpPath, '');
             fs.mkdirSync(Path.join(process.cwd(), '.tmp/targets/test/test'), {recursive: true});
             fs.writeFileSync(Path.join(process.cwd(), '/.tmp/targets/test/test/empty'), '');
-            expect(target.addBackup(tmpPath, 'empty', manifest)).to.be.rejectedWith(Error);
+            expect(target.addBackup(manifest)).to.be.rejectedWith(FileNotWriteable);
 
         });
     });

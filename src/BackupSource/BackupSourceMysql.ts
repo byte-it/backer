@@ -6,6 +6,7 @@ import * as Joi from 'joi';
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
+import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {ILabels} from '../Interfaces';
 import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
@@ -219,12 +220,11 @@ export class BackupSourceMysql implements IBackupSource {
     }
 
     /**
-     * Create a backup
-     * @param name {string} The name of the backup file to be created.
+     * {@inheritDoc}
      */
-    public async backup(name: string): Promise<string> {
-        const {cmd, env} = this.createDumpCmd(name);
-        return new Promise<string>((resolve, reject) => {
+    public async backup(manifest: IBackupManifest): Promise<IBackupManifest> {
+        const {cmd, env, tmpFile, tmpFileName} = this.createDumpCmd(manifest.name);
+        return new Promise<IBackupManifest>((resolve, reject) => {
             exec(
                 cmd,
                 {env},
@@ -232,7 +232,14 @@ export class BackupSourceMysql implements IBackupSource {
                     if (error) {
                         reject(error);
                     } else {
-                        resolve();
+
+                        const step: IBackupManifestStep = {
+                            processor: 'source.mysql',
+                            fileName: tmpFileName,
+                            uri: tmpFile,
+                        };
+                        manifest.steps.push(step);
+                        resolve(manifest);
                     }
                 },
             );
@@ -246,7 +253,7 @@ export class BackupSourceMysql implements IBackupSource {
      *
      * @param name {string} The name of the backup file to be created.
      */
-    public createDumpCmd(name: string): { cmd: string, env: ProcessEnv } {
+    public createDumpCmd(name: string): { cmd: string, env: ProcessEnv, tmpFile: string, tmpFileName: string } {
         const env = {
             DB_USER: this._dbUser,
             DB_PASSWORD: this._dbPassword,
@@ -290,12 +297,18 @@ export class BackupSourceMysql implements IBackupSource {
             }
         }
         const tmpPath = container.resolve<IConfig>('Config').get('tmpPath') as string;
-        const tmpFile = Path.isAbsolute(tmpPath) ? Path.join(tmpPath, name) : Path.join(process.cwd(), tmpPath, name);
+        const tmpFileName = `${name}${this.getFileSuffix()}`;
+        const tmpFile = Path.isAbsolute(tmpPath) ?
+            Path.join(tmpPath, tmpFileName) :
+            Path.join(process.cwd(), tmpPath, tmpFileName);
+
         cmd += ` > ${tmpFile}`;
 
         return {
             cmd,
             env,
+            tmpFile,
+            tmpFileName,
         };
     }
 

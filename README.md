@@ -67,7 +67,7 @@ all the heavy lifting.
 Some options can be hardcoded to the labels for example the database type. Other things like the database user and
 password shouldn't be. With most database containers out there, the user and password are likely to be configured via
 environment variables of the container. To use this already available information Backer can extract values from container 
-environment. If the label value is prefixed with `Env:` Backer will look for the variable with name after the colon.
+environments. If the label value is prefixed with `Env:` Backer will look for the variable with name after the colon.
 Example: The label `Env:MYSQL_ROOT_PASSWORD` will be replaced with the environment variable `MYSQL_ROOT_PASSWORD` of the 
 container.
 
@@ -122,7 +122,7 @@ The `mysql` source supports following options via container labels:
 - `tableIgnoreList?`: A comma separated list of tables to ignore
 - `tableIncludeList?`: A comma separated list tables to include
 - `options?`: Each option must be a sub item to the `options` label. The key must be the full name of the option. 
-    Each option will be printed in this format: `--OPTION_NAME="OPTION_VALUE"`. Option that don't use a value must use
+    Each option will be printed in this format: `--OPTION_NAME="OPTION_VALUE"`. Options that don't use a value must use
     a boolean value (false won't be added to the command) 
 
 ###### Sample:
