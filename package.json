@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/md5-file": "^4.0.2",
     "aws-sdk": "^2.757.0",
     "aws-sdk-mock": "^5.1.0",
     "config": "^3.3.2",
@@ -24,6 +25,7 @@
     "dot-object": "^1.9.0",
     "joi": "^17.2.1",
     "make-dir": "^3.1.0",
+    "md5-file": "^5.0.0",
     "moment": "^2.27.0",
     "move-file": "^1.2.0",
     "reflect-metadata": "^0.1.13",

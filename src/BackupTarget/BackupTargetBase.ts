@@ -7,6 +7,7 @@ import {IBackupTargetS3Config} from './BackupTargetS3';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
+import * as md5 from 'md5-file';
 
 /**
  * @category Target
@@ -75,8 +76,9 @@ export abstract class BackupTargetBase implements IBackupTarget {
         if (!(existsSync(uri) && lstatSync(uri).isFile())) {
             throw new FileNotFound(`File ${uri} doesn't exist`);
         }
-
-        manifest = await this.moveBackupToTarget(uri, Path.basename(uri), manifest);
+        const md5Hash = await md5(uri);
+        await this.moveBackupToTarget(uri, Path.basename(uri), manifest);
+        manifest.md5 = md5Hash;
 
         this.manifest.backups.push(manifest);
         await this.writeManifestToTarget();

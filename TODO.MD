@@ -18,9 +18,10 @@
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 - [ ] Give backup manifest uuids via file hash or something
 - [ ] Unify file access for testing
-- [ ] Add MD5 per step and final to manifest
+- [x] Add MD5 per step and final to manifest
 - [ ] Keep backer versions in manifests
 - [ ] Middleware Stack -> Compression, Encryption
+- [ ] Ensure manifest validity and integrity
 
 ## Realy Nice to have
 - [ ] "File source" to backup Docker Volumes

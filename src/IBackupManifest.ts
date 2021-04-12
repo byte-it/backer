@@ -3,14 +3,22 @@ export interface IBackupManifestStep {
      * Identifier of the processor for this step
      */
     processor: string;
+
     /**
      * The name of the file produced by this step
      */
     fileName: string;
+
     /**
      * The full uri of the file produced by this step
      */
     uri: string;
+
+    /**
+     * The md5 of the file produced by this step
+     */
+    md5: string;
+
     /**
      * Contains optional metadata provided by the source or target
      */
@@ -53,6 +61,11 @@ export interface IBackupManifest {
      * Path of the backup file relative to the manifest file on the target
      */
     path?: string;
+
+    /**
+     * The md5 of the stored backup file
+     */
+    md5?: string;
 
     /**
      * Contains optional metadata provided by the source or target

@@ -11,6 +11,7 @@ import {ILabels} from '../Interfaces';
 import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource} from './IBackupSource';
+import * as md5 from 'md5-file';
 
 export interface IMysqlLabels extends ILabels {
     mysql: {
@@ -232,11 +233,12 @@ export class BackupSourceMysql implements IBackupSource {
                     if (error) {
                         reject(error);
                     } else {
-
+                        const md5Hash = md5.sync(tmpFile);
                         const step: IBackupManifestStep = {
                             processor: 'source.mysql',
                             fileName: tmpFileName,
                             uri: tmpFile,
+                            md5: md5Hash
                         };
                         manifest.steps.push(step);
                         resolve(manifest);
