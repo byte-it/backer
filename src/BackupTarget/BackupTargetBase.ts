@@ -109,8 +109,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                 return currManifest === manifest;
             });
 
-        delete this.manifest.backups[index];
-
+        this.manifest.backups.splice(index, 1);
         await this.writeManifestToTarget();
     }
 
