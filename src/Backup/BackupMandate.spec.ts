@@ -1,13 +1,13 @@
 import {expect} from 'chai';
 import {IConfig} from 'config';
 import {mkdirSync} from 'fs';
-import moment = require('moment');
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {BackupTargetLocal} from '../BackupTarget/BackupTargetLocal';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {BackupMandate} from './BackupMandate';
+import {DateTime} from 'luxon';
 
 beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
@@ -167,7 +167,7 @@ describe('BackupMandate', () => {
             const containerId = 'TheContainerId';
             const containerName = 'TheContainerName';
             const pattern = '<DATE>-<CONTAINER_NAME>';
-            const date = moment();
+            const date = DateTime.now();
 
             const backup = new BackupMandate(
                 container.resolve('Config'),
@@ -180,7 +180,7 @@ describe('BackupMandate', () => {
                         return '.sql';
                     },
                 }, null, '0 0 * * *', '0', pattern);
-            const expectedName = `${date.format('YYYYMMDD-hh-mm')}-${containerName}`;
+            const expectedName = `${date.toFormat('yyyyMMdd-HH-mm')}-${containerName}`;
             expect(backup.createName(date)).to.equal(expectedName);
             backup.stop();
         });
@@ -191,7 +191,7 @@ describe('BackupMandate', () => {
             const containerId = 'TheContainerId';
             const containerName = 'TheContainerName';
             const pattern = '<DATE>-<CONTAINER_NAME>';
-            const date = moment();
+            const date = DateTime.now();
             const backup = new BackupMandate(
                 container.resolve('Config'),
                 container.resolve('Logger'),
@@ -210,6 +210,7 @@ describe('BackupMandate', () => {
         it('should not return manifests if there are less then the maximum retention number', () => {
             const backup = createMandate();
 
+            // @ts-ignore
             const toDelete = backup.calculateRetention([{
                 name: '1',
                 containerName: 'test',
@@ -223,6 +224,8 @@ describe('BackupMandate', () => {
         it('should not return manifest if there are exact as much backups as the retention says', () => {
             const backup = createMandate();
 
+
+            // @ts-ignore
             const toDelete = backup.calculateRetention([{
                 name: '1',
                 containerName: 'test',
@@ -242,6 +245,7 @@ describe('BackupMandate', () => {
         it('should return 1 manifest if there are 3 manifest and retention is 2', () => {
             const backup = createMandate();
 
+            // @ts-ignore
             const toDelete = backup.calculateRetention([
                 {
                     name: '1',

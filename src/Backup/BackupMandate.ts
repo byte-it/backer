@@ -2,7 +2,6 @@ import {IConfig} from 'config';
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
-import * as moment from 'moment';
 import {container, inject} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
 import {BackupSourceFactory} from '../BackupSource/BackupSourceFactory';
@@ -19,6 +18,7 @@ import {JobTrain} from '../Queue/JobTrain';
 import {RetentionJob} from '../Queue/RetentionJob';
 import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
 import {MiddlewareJob} from '../Queue/MiddlewareJob';
+import { DateTime } from 'luxon';
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
@@ -325,12 +325,12 @@ export class BackupMandate {
      * Generate a backup name derived from the name pattern
      * @todo TEST
      */
-    public createName(currentTime?: moment.Moment): string {
+    public createName(currentTime?: DateTime): string {
         if (typeof currentTime === 'undefined') {
-            currentTime = moment();
+            currentTime = DateTime.now();
         }
         const replacements = {
-            '<DATE>': currentTime.format('YYYYMMDD-hh-mm'),
+            '<DATE>': currentTime.toFormat('yyyyMMdd-HH-mm'),
             '<CONTAINER_NAME>': this._containerName,
         };
         let name = this._namePattern;
@@ -410,7 +410,7 @@ export class BackupMandate {
             name: backupName,
             containerName: this._containerName,
             sourceName: this._source.name,
-            date: moment().format('YYYYMMDD-hh-mm'),
+            date: DateTime.now().toFormat('yyyyMMdd-HH-mm'),
             steps: [],
         };
 
@@ -420,7 +420,6 @@ export class BackupMandate {
         const train = new JobTrain(manifest);
         train.enqueue(new SourceJob(this));
 
-        console.log(this._middlewareStack);
         if (this._middlewareStack.length > 0) {
             for (const middleware of this._middlewareStack) {
                 train.enqueue(new MiddlewareJob(this, middleware));

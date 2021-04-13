@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/luxon": "^1.26.3",
     "aws-sdk": "^2.885.0",
     "aws-sdk-mock": "^5.1.0",
     "config": "^3.3.6",
@@ -23,9 +24,9 @@
     "dockerode": "^3.2.1",
     "dot-object": "^1.9.0",
     "joi": "^17.4.0",
+    "luxon": "^1.26.0",
     "make-dir": "^3.1.0",
     "md5-file": "^5.0.0",
-    "moment": "^2.29.1",
     "move-file": "^1.2.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",

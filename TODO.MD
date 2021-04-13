@@ -11,7 +11,7 @@
 - [x] Switch to dependency injection/service container lib
 - [x] Configuration file -> implemented with 'config'
 - [x] static configured targets
-- [ ] replace moment
+- [x] replace moment
 - [ ] Switch to proper queue (self written) => **started**
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
