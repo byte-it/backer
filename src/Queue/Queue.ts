@@ -67,7 +67,7 @@ export class Queue {
      */
     private async work(): Promise<null> {
         while (this._working) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise<void>(resolve => setTimeout(resolve, 100));
             if (this._trains.length > 0) {
                 const train = this._trains.shift();
                 this._trainPromise = new Promise(async (resolve, reject) => {
@@ -106,7 +106,7 @@ export class Queue {
                     if(!this._working && train.peak() != null){
                         this._trains.unshift(train);
                     }
-                    resolve();
+                    resolve(null);
                 });
 
                 this._logger.log({

@@ -119,14 +119,14 @@ export abstract class BackupTargetBase implements IBackupTarget {
      * May do things like checking for existence of directories, checking write permissions etc.
      * @protected
      */
-    protected abstract async isTargetWriteable(): Promise<boolean>;
+    protected abstract isTargetWriteable(): Promise<boolean>;
 
     /**
      * Validates that exists on the implemented target.
      * @param {string} path The absolute path to the file.
      * @protected
      */
-    protected abstract async doesFileExistOnTarget(path: string): Promise<boolean>;
+    protected abstract doesFileExistOnTarget(path: string): Promise<boolean>;
 
     /**
      * Moves the backup file from the local tmp folder to the target implementation.
@@ -136,7 +136,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
      * @param {IBackupTargetManifest} manifest The manifest shipped with backup.
      * @protected
      */
-    protected abstract async moveBackupToTarget(
+    protected abstract moveBackupToTarget(
         tmpPath: string,
         name: string,
         manifest: IBackupManifest,
@@ -148,17 +148,17 @@ export abstract class BackupTargetBase implements IBackupTarget {
      * @param {IBackupTargetManifest} manifest The manifest for the backup to delete
      * @protected
      */
-    protected abstract async deleteBackupFromTarget(manifest: IBackupManifest): Promise<void>;
+    protected abstract deleteBackupFromTarget(manifest: IBackupManifest): Promise<void>;
 
     /**
      * Reads the manifest from the target.
      * @protected
      */
-    protected abstract async readManifestFromTarget(): Promise<IBackupTargetManifest>;
+    protected abstract readManifestFromTarget(): Promise<IBackupTargetManifest>;
 
     /**
      * Writes the manifest to the target
      * @protected
      */
-    protected abstract async writeManifestToTarget(): Promise<void>;
+    protected abstract writeManifestToTarget(): Promise<void>;
 }
