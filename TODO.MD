@@ -7,20 +7,24 @@
 - [x] Implement mysql source
 - [x] Implement retention with count
 - [x] Use winston as logging framework
-- [ ] Create compose test setup => **started**
 - [x] Switch to dependency injection/service container lib
 - [x] Configuration file -> implemented with 'config'
 - [x] static configured targets
 - [x] replace moment
-- [ ] Switch to proper queue (self written) => **started**
+- [x] Switch to proper queue (self written) => **started**
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
-- [ ] Give backup manifest uuids via file hash or something
-- [ ] Unify file access for testing
 - [x] Add MD5 per step and final to manifest
-- [ ] Keep backer versions in manifests
 - [ ] Middleware Stack -> ~~Compression~~, Encryption (PGP)
+
+### Manifest Housekeeping
+- [ ] Keep backer versions in manifests
+- [ ] Give backup manifest uuids via file hash or something
 - [ ] Ensure manifest validity and integrity
+
+### Testing
+- [ ] Unify file access for testing
+- [ ] Create compose test setup => **started**
 
 ### low prio
 - [ ] Docs with Slate
