@@ -2,6 +2,7 @@ import {ContainerInspectInfo} from 'dockerode';
 import {object} from 'dot-object';
 import {IMysqlLabels} from './BackupSource/BackupSourceMysql';
 import {ILabels} from './Interfaces';
+import {IBackupManifest, IBackupManifestStep} from './IBackupManifest';
 
 /**
  * Extract the labels beginning with `backer` and convert the dotted keys to nested objects
@@ -91,4 +92,12 @@ export function getHostForContainer(network: string, container: ContainerInspect
     } else {
         throw new Error(`Network ${network} not found on container ${container.Name}`);
     }
+}
+
+/**
+ *
+ * @param manifest
+ */
+export function getLastStep(manifest: IBackupManifest): IBackupManifestStep|null {
+    return manifest.steps.length > 0 ? manifest.steps[manifest.steps.length - 1] : null;
 }

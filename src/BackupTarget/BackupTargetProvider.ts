@@ -5,6 +5,7 @@ import './BackupTargetLocal';
 import {BackupTargetLocal, IBackupTargetLocalConfig} from './BackupTargetLocal';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
+import {IProvider} from '../IProvider';
 
 /**
  * The BackupTargetProvider manages all available and configured BackupTargets.
@@ -14,7 +15,7 @@ import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
  * @category BackupTarget
  */
 @singleton()
-export class BackupTargetProvider {
+export class BackupTargetProvider implements IProvider {
 
     /**
      * The default target to use when none is specified
@@ -47,7 +48,8 @@ export class BackupTargetProvider {
                     level: 'info',
                     message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
                 });
-            } catch (e) {}
+            } catch (e) {
+            }
         }
     }
 

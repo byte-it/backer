@@ -8,6 +8,7 @@ import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import * as md5 from 'md5-file';
+import {getLastStep} from '../Util';
 
 /**
  * @category Target
@@ -70,7 +71,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
      * @inheritDoc
      */
     public async addBackup(manifest: IBackupManifest): Promise<void> {
-        const lastStep = manifest.steps[manifest.steps.length - 1];
+        const lastStep = getLastStep(manifest);
 
         const {uri} = lastStep;
         if (!(existsSync(uri) && lstatSync(uri).isFile())) {

@@ -13,15 +13,17 @@
 - [x] static configured targets
 - [ ] replace moment
 - [ ] Switch to proper queue (self written) => **started**
-- [ ] Docs with Slate
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 - [ ] Give backup manifest uuids via file hash or something
 - [ ] Unify file access for testing
 - [x] Add MD5 per step and final to manifest
 - [ ] Keep backer versions in manifests
-- [ ] Middleware Stack -> Compression, Encryption
+- [ ] Middleware Stack -> ~~Compression~~, Encryption (PGP)
 - [ ] Ensure manifest validity and integrity
+
+### low prio
+- [ ] Docs with Slate
 
 ## Realy Nice to have
 - [ ] "File source" to backup Docker Volumes

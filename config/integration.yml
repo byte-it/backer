@@ -11,3 +11,6 @@ targets:
     accessKeyId: 'minio'
     secretAccessKey: 'minio123'
     s3ForcePathStyle: true
+middlewares:
+- name: 'compression'
+  type: 'gzip'

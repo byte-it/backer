@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/md5-file": "^4.0.2",
     "aws-sdk": "^2.757.0",
     "aws-sdk-mock": "^5.1.0",
     "config": "^3.3.2",

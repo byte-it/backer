@@ -9,7 +9,7 @@ import {IBackupSource} from './IBackupSource';
  * @category BackupSource
  */
 @singleton()
-export class BackupSourceProvider {
+export class BackupSourceFactory {
   /**
    * Create a BackupSourceInstance from the labels
    * @param container The container instance to create the backup source for

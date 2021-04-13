@@ -5,7 +5,7 @@ import * as Joi from 'joi';
 import * as moment from 'moment';
 import {container, inject} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
-import {BackupSourceProvider} from '../BackupSource/BackupSourceProvider';
+import {BackupSourceFactory} from '../BackupSource/BackupSourceFactory';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {IBackupTarget} from '../BackupTarget/IBackupTarget';
@@ -17,11 +17,21 @@ import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {JobTrain} from '../Queue/JobTrain';
 import {RetentionJob} from '../Queue/RetentionJob';
+import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
+import {MiddlewareJob} from '../Queue/MiddlewareJob';
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
  */
 export class BackupMandate {
+
+    /**
+     * The logger preloaded with meta about the backedup container
+     */
+    get logger(): Logger {
+        return this._logger;
+    }
+
     /**
      * The containerName
      * @type {string}
@@ -89,6 +99,7 @@ export class BackupMandate {
             retention: Joi.number(),
             namePattern: Joi.string(),
             network: Joi.string().required(),
+            middleware: Joi.string().regex(/^(\w|\d|-|_)+(,( )?(\w|\d|-|_)+)*$/)
         }).options({
             allowUnknown: true,
         });
@@ -114,7 +125,7 @@ export class BackupMandate {
             ...defaultLogMeta,
         });
 
-        const sourceProvider = container.resolve<BackupSourceProvider>(BackupSourceProvider);
+        const sourceProvider = container.resolve<BackupSourceFactory>(BackupSourceFactory);
         const targetProvider = container.resolve<BackupTargetProvider>(BackupTargetProvider);
 
         const defaultLabels = {
@@ -143,7 +154,7 @@ export class BackupMandate {
         let target: IBackupTarget;
         if (labels.target && labels.target !== '') {
             logger.log({
-                level: 'info',
+                level: 'debug',
                 message: `Container ${containerName}: Use "${labels.target}" as target`,
                 ...defaultLogMeta,
             });
@@ -153,7 +164,7 @@ export class BackupMandate {
             }
         } else {
             logger.log({
-                level: 'info',
+                level: 'debug',
                 message: `Container ${containerName}: Use default target`,
                 ...defaultLogMeta,
             });
@@ -161,6 +172,27 @@ export class BackupMandate {
         }
 
         const source = sourceProvider.createBackupSource(inspectInfo);
+
+        const middlewareStack = [];
+
+        if (labels.middleware && labels.middleware !== '') {
+            const middlewareNames = labels.middleware.split(',');
+            for (let middlewareName of middlewareNames) {
+                middlewareName = middlewareName.trim();
+
+                const middleware = container.resolve<IBackupMiddleware>(`middleware.${middlewareName}`);
+
+                if (middleware == null) {
+                    throw new Error(`Container ${containerName}: Validation: The middleware "${middlewareName}" doesn't exist`);
+                }
+                middlewareStack.push(middleware);
+            }
+            logger.log({
+                level: 'debug',
+                message: `Container ${containerName}: Use "${middlewareNames.join(',')}" as middlewares`,
+                ...defaultLogMeta,
+            });
+        }
 
         logger.log({
             level: 'info',
@@ -178,6 +210,7 @@ export class BackupMandate {
             labels.interval,
             parseInt(labels.retention),
             labels.namePattern,
+            middlewareStack,
         );
     }
 
@@ -191,14 +224,19 @@ export class BackupMandate {
     private readonly _containerId: string;
 
     /**
-     * The source entity of the backup
+     * The source instance for the backup mandate
      */
     private readonly _source: IBackupSource;
 
     /**
-     * The target entity of the backup
+     * The target instance for the backup mandate
      */
     private readonly _target: IBackupTarget;
+
+    /**
+     * The middleware stack for the backup mandate
+     */
+    private readonly _middlewareStack: IBackupMiddleware[] = [];
 
     /**
      * The backup interval in cron format (* * * * * *)
@@ -221,6 +259,8 @@ export class BackupMandate {
      */
     private _cron: CronJob;
 
+    private _logger: Logger;
+
     private readonly _defaultMeta: object;
 
     /**
@@ -236,7 +276,7 @@ export class BackupMandate {
      */
     constructor(
         @inject('Config') private config: IConfig,
-        @inject('Logger') private logger: Logger,
+        @inject('Logger') logger: Logger,
         containerId: string,
         containerName: string,
         source: IBackupSource,
@@ -244,7 +284,14 @@ export class BackupMandate {
         interval: string,
         retention: number,
         namePattern: string,
+        middlewareStack?: IBackupMiddleware[],
     ) {
+
+        this._logger = logger.child({
+            containerId: this._containerId,
+            containerName: this._containerName,
+        })
+
         this._containerId = containerId;
         this._containerName = containerName;
         this._source = source;
@@ -256,7 +303,11 @@ export class BackupMandate {
         this._defaultMeta = {
             containerId: this._containerId,
             containerName: this._containerName,
-        };
+        }
+
+        if (Array.isArray(middlewareStack)) {
+            this._middlewareStack = middlewareStack;
+        }
 
         this._cron = new CronJob(this._interval, this.backup.bind(this));
         this._cron.start();
@@ -355,7 +406,6 @@ export class BackupMandate {
         };
 
 
-
         const manifest: IBackupManifest = {
             name: backupName,
             containerName: this._containerName,
@@ -369,6 +419,14 @@ export class BackupMandate {
 
         const train = new JobTrain(manifest);
         train.enqueue(new SourceJob(this));
+
+        console.log(this._middlewareStack);
+        if (this._middlewareStack.length > 0) {
+            for (const middleware of this._middlewareStack) {
+                train.enqueue(new MiddlewareJob(this, middleware));
+            }
+        }
+
         train.enqueue(new TargetJob(this));
         train.enqueue(new RetentionJob(this));
 
@@ -379,31 +437,6 @@ export class BackupMandate {
             message: `Backup ${backupName} enqueued`,
             ...backupMeta,
         });
-
-        // try {
-        // } catch (e) {
-        //     this.log({
-        //         level: 'error',
-        //         message: 'Backup source encountered an error',
-        //         error: e.message,
-        //         ...backupMeta,
-        //     });
-        //     return;
-        // }
-        // this.log(`Backup ${backupName} created`);
-        // try {
-        // } catch (e) {
-        //     this.log({
-        //         level: 'error',
-        //         message: 'Backup target encountered an error',
-        //         error: e,
-        //         errorMessage: e.message,
-        //         ...backupMeta,
-        //     });
-        //     return;
-        // }
-        //
-        // this.log(`Backup ${backupName} transferred to target`);
     }
 
     /**
@@ -412,11 +445,9 @@ export class BackupMandate {
      */
     protected log(log: string | LogEntry) {
         if (typeof log === 'string') {
-            this.logger.info(log, this.containerId, this.containerName);
+            this._logger.info(log, this.containerId, this.containerName);
         } else {
-            log.containerId = this.containerId;
-            log.containerName = this.containerName;
-            this.logger.log(log);
+            this._logger.log(log);
         }
     }
 }

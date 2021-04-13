@@ -5,6 +5,7 @@ export interface ILabels extends Object {
   'retention'?: string;
   'namePattern'?: string;
   'network': string;
+  'middleware': string;
 }
 
 export interface IDockerEvent {

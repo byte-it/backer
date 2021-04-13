@@ -6,3 +6,4 @@ targets:
   type: 'local'
   dir: '/var/opt/backer/local'
   default: true
+middlewares: []

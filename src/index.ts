@@ -8,6 +8,7 @@ import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import * as config from 'config';
 import {IConfig} from 'config';
 import {Queue} from './Queue/Queue';
+import {BackupMiddlewareProvider} from './BackupMiddleware/BackupMiddlewareProvider';
 
 /**
  * Bootstraps the application.
@@ -18,7 +19,9 @@ async function bootstrap() {
 
     const logger = winston.createLogger({
         transports: [
-            new winston.transports.Console(),
+            new winston.transports.Console({
+                level: 'debug'
+            }),
         ],
     });
 
@@ -36,6 +39,10 @@ async function bootstrap() {
 
     const targetProvider = container.resolve(BackupTargetProvider);
     await targetProvider.init();
+
+
+    const middlewareProvider = container.resolve(BackupMiddlewareProvider);
+    await middlewareProvider.init();
 
     const backupManager = container.resolve(BackupManager);
     await backupManager.init();
