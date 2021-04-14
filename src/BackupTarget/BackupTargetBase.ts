@@ -14,14 +14,23 @@ import {getLastStep} from '../Util';
  * @category Target
  */
 export abstract class BackupTargetBase implements IBackupTarget {
+    get type(): string {
+        return this._type;
+    }
+
+    get name(): string {
+        return this._name;
+    }
 
     public static readonly manifestName = 'manifest.json';
 
-    public readonly abstract name: string;
+    protected _name: string;
+    protected _type: string;
 
     protected manifest: IBackupTargetManifest;
 
     protected constructor(@inject('logger') protected logger: Logger, protected config: IBackupTargetConfig) {
+        this._name = config.name;
     }
 
     /**

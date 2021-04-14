@@ -1,14 +1,18 @@
 import {exec, ExecException} from 'child_process';
 import * as md5 from 'md5-file';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
-import { IBackupMiddleware } from './IBackupMiddleware';
+import {IBackupMiddleware} from './IBackupMiddleware';
+import {getLastStep} from '../Util';
 
-export class GzipMiddleware implements IBackupMiddleware{
-
+/**
+ * Compresses the backup with gzip.
+ */
+export class GzipMiddleware implements IBackupMiddleware {
 
     get type(): string {
         return this._type;
     }
+
 
     get name(): string {
         return this._name;
@@ -18,13 +22,21 @@ export class GzipMiddleware implements IBackupMiddleware{
 
     protected _name: string;
 
+    /**
+     *
+     * @param name
+     */
     public constructor(name: string) {
         this._name = name;
     }
 
+    /**
+     *
+     * @param manifest
+     */
     public async execute(manifest: IBackupManifest): Promise<any> {
         const cmd = this.buildCommand(manifest);
-        const {uri, fileName} = manifest.steps[manifest.steps.length - 1];
+        const {uri, fileName} = getLastStep(manifest);
 
         return new Promise<IBackupManifest>((resolve, reject) => {
             exec(
@@ -49,12 +61,20 @@ export class GzipMiddleware implements IBackupMiddleware{
         });
     }
 
+    /**
+     * @return
+     */
     public fileSuffix() {
         return '.gz';
     }
 
+    /**
+     *
+     * @param manifest
+     * @private
+     */
     private buildCommand(manifest: IBackupManifest): string {
-        const lastStep = manifest.steps[manifest.steps.length - 1];
+        const lastStep = getLastStep(manifest);
         return `gzip ${lastStep.uri}`;
     }
 }

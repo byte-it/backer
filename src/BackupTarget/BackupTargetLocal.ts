@@ -43,7 +43,7 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
         return target;
     }
 
-    public readonly name: string = 'local';
+    protected _type = 'local';
 
     get backupDir(): string {
         return this._backupDir;

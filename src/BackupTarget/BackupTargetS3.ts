@@ -37,6 +37,8 @@ export interface IBackupTargetS3Config extends IBackupTargetConfig {
  */
 export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
 
+    protected _type = 's3';
+
     get bucket() {
         return this._bucket;
     }
@@ -60,10 +62,6 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         await target.init();
         return target;
     }
-
-    public readonly type = 's3';
-
-    public readonly name: string = 's3';
 
     /**
      * The S3 instance used for all operations

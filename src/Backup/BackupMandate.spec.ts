@@ -226,18 +226,22 @@ describe('BackupMandate', () => {
 
 
             // @ts-ignore
-            const toDelete = backup.calculateRetention([{
-                name: '1',
-                containerName: 'test',
-                sourceName: 'test',
-                date: '20200101-00-00',
-            },
+            const toDelete = backup.calculateRetention([
+                {
+                    name: '1',
+                    containerName: 'test',
+                    sourceName: 'test',
+                    date: '20200101-00-00',
+                    steps: []
+                },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
-                }]);
+                    steps: []
+                }
+            ]);
 
             expect(toDelete).to.be.an('array').that.is.empty;
         });
@@ -252,18 +256,21 @@ describe('BackupMandate', () => {
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200101-00-00',
+                    steps: [],
                 },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
+                    steps: [],
                 },
                 {
                     name: '3',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200103-00-00',
+                    steps: [],
                 },
             ]);
 
@@ -278,18 +285,21 @@ describe('BackupMandate', () => {
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200101-00-00',
+                    steps: [],
                 },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
+                    steps: [],
                 },
                 {
                     name: '3',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200103-00-00',
+                    steps: [],
                 },
             ];
             const toDelete = backup.calculateRetention(manifests);
@@ -305,24 +315,28 @@ describe('BackupMandate', () => {
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200101-00-00',
+                    steps: []
                 },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
+                    steps: []
                 },
                 {
                     name: '3',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200103-00-00',
+                    steps: []
                 },
                 {
                     name: '4',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200104-00-00',
+                    steps: []
                 },
             ];
             const toDelete = backup.calculateRetention(manifests);

@@ -118,11 +118,20 @@ export class BackupSourceMysql implements IBackupSource {
         const host = getHostForContainer(labels.network, inspectInfo);
 
         return new BackupSourceMysql(
-            host, mysqlUser, mysqlPassword, db, options, tableIgnoreList, tableIncludeList,
+            inspectInfo.Name, host, mysqlUser, mysqlPassword, db, options, tableIgnoreList, tableIncludeList,
         );
     }
 
-    public readonly name: string = 'mysql';
+    get type() {
+        return this._type;
+    }
+
+    get name() {
+        return this._name;
+    }
+
+    private readonly _type: string = 'mysql';
+    private readonly _name: string;
     private readonly _dbHost: string;
     private readonly _dbUser: string;
     private readonly _dbPassword: string;
@@ -132,7 +141,8 @@ export class BackupSourceMysql implements IBackupSource {
     private readonly _includeTablesList?: string[];
 
     /**
-     * @param dbHost The host (e.g IP-address of the host )
+     * @param name The name for this backup instance (e.g. the container name)
+     * @param dbHost The host (e.g IP-address of the host)
      * @param dbUser The database user to access the db
      * @param dbPassword The database user password to access the db
      * @param db The database to backup, either a single string or an array of databases
@@ -142,6 +152,7 @@ export class BackupSourceMysql implements IBackupSource {
      *         Note that only black or whitelist can be used. The blacklist will be prioritised above the whitelist
      */
     public constructor(
+        name: string,
         dbHost: string,
         dbUser: string,
         dbPassword: string,
@@ -149,6 +160,7 @@ export class BackupSourceMysql implements IBackupSource {
         options?: object,
         ignoreTablesList?: string[],
         includeTablesList?: string[]) {
+        this._name = name;
         this._dbHost = dbHost;
         this._dbUser = dbUser;
         this._dbPassword = dbPassword;

@@ -5,6 +5,7 @@
  */
 import {IBackupTargetManifest} from '../IBackupManifest';
 import {IBackupManifest} from '../IBackupManifest';
+import {IProvideable} from '../IProvideable';
 
 /**
  * The configuration object used to initialize the target. Each BackupTarget implementation can extend this interface
@@ -33,9 +34,7 @@ export interface IBackupTargetConfig {
  *
  * @category BackupTarget
  */
-export interface IBackupTarget {
-
-    readonly name: string;
+export interface IBackupTarget extends IProvideable{
 
     /**
      * Initializes the target. The constructor only assigns the config. This allows the init method to perform async

@@ -6,6 +6,9 @@ import {GzipMiddleware} from './GzipMiddleware';
 import {IBackupMiddlewareConfig} from './IBackupMiddleware';
 import {IProvider} from '../IProvider';
 
+/**
+ * Instanciates all configured middlewares.
+ */
 @singleton()
 export class BackupMiddlewareProvider implements IProvider{
 

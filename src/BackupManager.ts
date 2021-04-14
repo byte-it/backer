@@ -6,7 +6,7 @@ import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {IDockerContainerEvent, IDockerEvent} from './Interfaces';
 
 /**
- * BackupManager is responsible for the bookkeeping of all active backups.
+ * BackupManager is responsible for the bookkeeping of all active backup mandates.
  * It scans the docker daemon for all running and configured containers and reacts docker's container events.
  */
 @singleton()

@@ -1,5 +1,9 @@
 import {IBackupManifest} from '../IBackupManifest';
+import {IProvideable} from '../IProvideable';
 
+/**
+ *
+ */
 export interface IBackupMiddlewareConfig {
     /**
      * The type of target.
@@ -17,9 +21,14 @@ export interface IBackupMiddlewareConfig {
     default?: boolean;
 }
 
+/**
+ *
+ */
+export interface IBackupMiddleware extends IProvideable {
 
-export interface IBackupMiddleware{
-    type: string;
-    name: string;
+    /**
+     *
+     * @param manifest
+     */
     execute(manifest: IBackupManifest): Promise<any>;
 }

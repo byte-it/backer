@@ -18,7 +18,7 @@ import {JobTrain} from '../Queue/JobTrain';
 import {RetentionJob} from '../Queue/RetentionJob';
 import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
 import {MiddlewareJob} from '../Queue/MiddlewareJob';
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
@@ -203,6 +203,7 @@ export class BackupMandate {
         return new BackupMandate(
             container.resolve('Config'),
             container.resolve('Logger'),
+            container.resolve(Queue),
             inspectInfo.Id,
             containerName,
             source,
@@ -277,6 +278,7 @@ export class BackupMandate {
     constructor(
         @inject('Config') private config: IConfig,
         @inject('Logger') logger: Logger,
+        @inject('Queue') private queue: Queue,
         containerId: string,
         containerName: string,
         source: IBackupSource,
@@ -414,9 +416,6 @@ export class BackupMandate {
             steps: [],
         };
 
-        // @todo Move queue to attribute
-        const queue = container.resolve<Queue>(Queue);
-
         const train = new JobTrain(manifest);
         train.enqueue(new SourceJob(this));
 
@@ -429,7 +428,7 @@ export class BackupMandate {
         train.enqueue(new TargetJob(this));
         train.enqueue(new RetentionJob(this));
 
-        queue.enqueueTrain(train);
+        this.queue.enqueueTrain(train);
 
         this.log({
             level: 'info',
