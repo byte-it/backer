@@ -278,7 +278,7 @@ export class BackupMandate {
     constructor(
         @inject('Config') private config: IConfig,
         @inject('Logger') logger: Logger,
-        @inject('Queue') private queue: Queue,
+        @inject(Queue) private queue: Queue,
         containerId: string,
         containerName: string,
         source: IBackupSource,

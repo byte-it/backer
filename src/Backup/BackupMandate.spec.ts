@@ -8,6 +8,7 @@ import {BackupTargetLocal} from '../BackupTarget/BackupTargetLocal';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {BackupMandate} from './BackupMandate';
 import {DateTime} from 'luxon';
+import {Queue} from '../Queue/Queue';
 
 beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
@@ -172,6 +173,7 @@ describe('BackupMandate', () => {
             const backup = new BackupMandate(
                 container.resolve('Config'),
                 container.resolve('Logger'),
+                container.resolve(Queue),
                 containerId,
                 containerName,
                 // @ts-ignore
@@ -195,6 +197,7 @@ describe('BackupMandate', () => {
             const backup = new BackupMandate(
                 container.resolve('Config'),
                 container.resolve('Logger'),
+                container.resolve(Queue),
                 containerId,
                 containerName,
                 // @ts-ignore
