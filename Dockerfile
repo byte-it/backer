@@ -1,7 +1,7 @@
 FROM node:14
 
 RUN apt-get update \
-    && apt-get install -y mysql-client
+    && apt-get install -y mysql-client ccrypt
 
 RUN mkdir -p /var/tmp/backer && mkdir -p /var/opt/backer/local
 

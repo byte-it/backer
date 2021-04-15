@@ -14,3 +14,6 @@ targets:
 middlewares:
 - name: 'compression'
   type: 'gzip'
+- name: 'encryption'
+  type: 'ccrypt'
+  key: '1234'

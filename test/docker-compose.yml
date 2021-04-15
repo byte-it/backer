@@ -35,7 +35,7 @@ services:
       backer.mysql.password: 'Env:MYSQL_ROOT_PASSWORD'
       backer.mysql.database: 'Env:MYSQL_DATABASE'
       backer.target: 'minio'
-      backer.middleware: 'compression'
+      backer.middleware: 'compression,encryption'
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test

@@ -15,7 +15,7 @@
 - [x] js doc
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 - [x] Add MD5 per step and final to manifest
-- [ ] Middleware Stack -> ~~Compression~~, Encryption (PGP)
+- [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
 
 ### Manifest Housekeeping
 - [ ] Keep backer versions in manifests
@@ -47,3 +47,4 @@
 - [ ] Rollback (triggering via api)
 - [ ] Rollback tests
 - [ ] Prometheus export
+- [ ] GnuPG Encryption Middleware

@@ -5,6 +5,7 @@ import {IBackupTargetConfig} from '../BackupTarget/IBackupTarget';
 import {GzipMiddleware} from './GzipMiddleware';
 import {IBackupMiddlewareConfig} from './IBackupMiddleware';
 import {IProvider} from '../IProvider';
+import {CcryptMiddlware, IBackupCcryptMiddlewareConfig} from './CcryptMiddlware';
 
 /**
  * Instanciates all configured middlewares.
@@ -23,6 +24,9 @@ export class BackupMiddlewareProvider implements IProvider{
                 switch (middleware.type) {
                     case 'gzip':
                         instance = new GzipMiddleware(middleware.name);
+                        break;
+                    case 'ccrypt':
+                        instance = new CcryptMiddlware(middleware as IBackupCcryptMiddlewareConfig);
                         break;
                     default:
                         throw new Error(`Middle ${middleware.type} not found.`);

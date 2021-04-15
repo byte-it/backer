@@ -14,11 +14,6 @@ export interface IBackupMiddlewareConfig {
      * The name the target should be used under.
      */
     name: string;
-
-    /**
-     * Indicates that the target should be default and used for all undefined targets.
-     */
-    default?: boolean;
 }
 
 /**
