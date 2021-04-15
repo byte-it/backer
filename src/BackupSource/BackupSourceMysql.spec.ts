@@ -111,6 +111,7 @@ describe('BackupSourceMysql', () => {
     describe('#constructor()', () => {
         it('should prefer ignore over include list', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -127,6 +128,7 @@ describe('BackupSourceMysql', () => {
         it('should throw an error if constructed with multiple databases and an include list', () => {
             expect(() =>
                 new BackupSourceMysql(
+                    'test',
                     'thedbhost',
                     'thedbuser',
                     'thedbpassword',
@@ -141,6 +143,7 @@ describe('BackupSourceMysql', () => {
     describe('#createDumpCmd()', () => {
         it('should include all basic options', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -153,6 +156,7 @@ describe('BackupSourceMysql', () => {
         });
         it('should handle multiple databases correctly', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -165,6 +169,7 @@ describe('BackupSourceMysql', () => {
         });
         it('should add the an absolute path to the command', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -176,6 +181,7 @@ describe('BackupSourceMysql', () => {
         });
         it('should include the secrets in the env', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -186,6 +192,7 @@ describe('BackupSourceMysql', () => {
         });
         it('shouldn\'t write the secrets to the cmd string', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -196,6 +203,7 @@ describe('BackupSourceMysql', () => {
         });
         it('should include the additional options', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -210,6 +218,7 @@ describe('BackupSourceMysql', () => {
         });
         it('should set one ignored table', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -224,6 +233,7 @@ describe('BackupSourceMysql', () => {
 
         it('should set multiple ignored tables', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -238,6 +248,7 @@ describe('BackupSourceMysql', () => {
 
         it('should set multiple ignored tables with multiple databases', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
@@ -252,6 +263,7 @@ describe('BackupSourceMysql', () => {
 
         it('should set the included tables', () => {
             const source = new BackupSourceMysql(
+                'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',

@@ -40,7 +40,7 @@ describe('BackupTargetS3', () => {
             const target = new BackupTargetS3(container.resolve('Logger'), config);
 
             expect(target.bucket).to.equal('test');
-            expect(target.name).to.equal('s3');
+            expect(target.name).to.equal('test');
             expect(target.s3Client).to.be.an.instanceof(AWS.S3);
         });
     });
