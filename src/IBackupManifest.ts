@@ -107,4 +107,9 @@ export interface IBackupTargetManifest {
      * @type {IBackupManifest[]}
      */
     backups: IBackupManifest[];
+
+    /**
+     * The version of backer that has written the manifest
+     */
+    version: string;
 }

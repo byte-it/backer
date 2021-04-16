@@ -16,9 +16,10 @@
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 - [x] Add MD5 per step and final to manifest
 - [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
+- [ ] Static config for containers
 
 ### Manifest Housekeeping
-- [ ] Keep backer versions in manifests
+- [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something
 - [ ] Ensure manifest validity and integrity
 
@@ -30,6 +31,7 @@
 - [ ] Docs with Slate
 
 ## Realy Nice to have
+- [ ] Improved queque parallelity and concurence
 - [ ] "File source" to backup Docker Volumes
 - [ ] Static pre configuration for sources
 - [ ] Implement postgres source

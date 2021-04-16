@@ -50,6 +50,9 @@ export abstract class BackupTargetBase implements IBackupTarget {
         }
         try {
             this.manifest = await this.readManifestFromTarget();
+            if(this.manifest.version != process.env.npm_package_version){
+                this.manifest.version = process.env.npm_package_version;
+            }
         } catch (e) {
             if (e instanceof ManifestNotFound) {
                 this.logger.log({
@@ -66,6 +69,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                         name: this.config.name,
                         type: this.config.type,
                     },
+                    version: process.env.npm_package_version,
                 };
 
             } else {
