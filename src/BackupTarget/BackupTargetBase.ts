@@ -2,13 +2,14 @@ import {existsSync, lstatSync, PathLike} from 'fs';
 import * as Path from 'path';
 import {inject, injectable} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
+import {getIBackupTargetManifestSchema, IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {IBackupTargetS3Config} from './BackupTargetS3';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import * as md5 from 'md5-file';
 import {getLastStep} from '../Util';
+import {ManifestInvalid} from './Exceptions/ManifestInvalid';
 
 /**
  * @category Target
@@ -50,17 +51,33 @@ export abstract class BackupTargetBase implements IBackupTarget {
         }
         try {
             this.manifest = await this.readManifestFromTarget();
-            if(this.manifest.version != process.env.npm_package_version){
+
+            const result = getIBackupTargetManifestSchema().validate(this.manifest);
+
+            if (result.hasOwnProperty('error')) {
+                throw new ManifestInvalid(result.error.toString());
+            }
+            if (this.manifest.version != process.env.npm_package_version) {
                 this.manifest.version = process.env.npm_package_version;
             }
         } catch (e) {
-            if (e instanceof ManifestNotFound) {
-                this.logger.log({
-                    level: 'info',
-                    message: `BackupTarget ${this.config.name}: The configured target doesn't include a manifest file, a new one will be created`,
-                    targetName: this.config.name,
-                    targetType: this.config.type,
-                });
+            if (e instanceof ManifestNotFound || e instanceof ManifestInvalid) {
+
+                if (e instanceof ManifestNotFound) {
+                    this.logger.log({
+                        level: 'info',
+                        message: `BackupTarget ${this.config.name}: The configured target doesn't include a manifest file, a new one will be created`,
+                        targetName: this.config.name,
+                        targetType: this.config.type,
+                    });
+                } else if (e instanceof ManifestInvalid) {
+                    this.logger.log({
+                        level: 'info',
+                        message: `BackupTarget ${this.config.name}: The manifest of the configured target is invalid, a new one will be created`,
+                        targetName: this.config.name,
+                        targetType: this.config.type,
+                    });
+                }
 
                 // Create a new manifest
                 this.manifest = {

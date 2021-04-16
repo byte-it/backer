@@ -1,3 +1,5 @@
+import {ObjectSchema, object, string, array} from 'joi';
+
 export interface IBackupManifestStep {
     /**
      * Identifier of the processor for this step
@@ -25,6 +27,16 @@ export interface IBackupManifestStep {
     optional?: {
         [key: string]: any;
     };
+}
+
+export function getIBackupManifestStepSchema(): ObjectSchema {
+    return object().keys({
+        processor: string().required(),
+        fileName: string().required(),
+        uri: string().required(),
+        md5: string().required(),
+        optional: object()
+    });
 }
 
 /**
@@ -75,6 +87,19 @@ export interface IBackupManifest {
     };
 }
 
+export function getIBackupManifestSchema(): ObjectSchema {
+    return object().keys({
+        name: string().required(),
+        containerName: string().required(),
+        sourceName: string().required(),
+        steps: array().required().items(getIBackupManifestStepSchema()),
+        date: string().required(),
+        md5: string(),
+        path: string(),
+        optional: object()
+    });
+}
+
 /**
  * Contains information about the backup target
  * @category BackupTarget
@@ -89,6 +114,13 @@ export interface IBackupManifestTarget {
      * The type of the target
      */
     type: string;
+}
+
+export function getIBackupManifestTargetSchema(): ObjectSchema {
+    return object().keys({
+        name: string().required(),
+        type: string().required(),
+    });
 }
 
 /**
@@ -112,4 +144,12 @@ export interface IBackupTargetManifest {
      * The version of backer that has written the manifest
      */
     version: string;
+}
+
+export function getIBackupTargetManifestSchema(): ObjectSchema {
+    return object().keys({
+        target: getIBackupManifestTargetSchema(),
+        backups: array().items(getIBackupManifestSchema()),
+        version: string().required(),
+    });
 }

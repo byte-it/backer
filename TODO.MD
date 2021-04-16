@@ -21,7 +21,7 @@
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something
-- [ ] Ensure manifest validity and integrity
+- [x] Ensure manifest validity and integrity
 
 ### Testing
 - [ ] Unify file access for testing
