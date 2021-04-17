@@ -49,6 +49,11 @@ export class BackupTargetProvider implements IProvider {
                     message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
                 });
             } catch (e) {
+                this.logger.log({
+                    level: 'error',
+                    message: `Failed to instanciate target ${target.name}`,
+                    error: e,
+                });
             }
         }
     }

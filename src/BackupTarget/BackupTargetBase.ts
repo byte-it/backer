@@ -41,13 +41,12 @@ export abstract class BackupTargetBase implements IBackupTarget {
         const writeable = await this.isTargetWriteable();
         if (!writeable) {
             this.logger.log({
-                level: 'info',
+                level: 'error',
                 message: `BackupTarget ${this.config.name}: The configured target isn't writeable.`,
                 targetName: this.config.name,
                 targetType: this.config.type,
             });
-            // @todo Error out and prevent target creation to prevent problems further down the road
-            return;
+            throw new Error(`Target ${this._name} isn't writeable, init aborted. All mandates with this target will fail`);
         }
         try {
             this.manifest = await this.readManifestFromTarget();

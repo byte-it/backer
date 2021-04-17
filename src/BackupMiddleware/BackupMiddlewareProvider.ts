@@ -39,6 +39,11 @@ export class BackupMiddlewareProvider implements IProvider{
                 });
             }
             catch (e) {
+                this.logger.log({
+                    level: 'error',
+                    message: `Failed to instanciate middleware ${middleware.name}`,
+                    error: e,
+                });
             }
         }
     }
