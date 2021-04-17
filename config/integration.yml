@@ -17,3 +17,15 @@ middlewares:
 - name: 'encryption'
   type: 'ccrypt'
   key: '1234'
+mandates:
+  test_mariadb_static_1:
+    labels:
+      type: 'mysql'
+      interval: '* * * * *'
+      network: 'test_default'
+      mysql:
+        user: 'Text:root'
+        password: 'Env:MYSQL_ROOT_PASSWORD'
+        database: 'Env:MYSQL_DATABASE'
+      target: 'minio'
+      middleware: 'compression,encryption'

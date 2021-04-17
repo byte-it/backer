@@ -7,3 +7,4 @@ targets:
   dir: '/var/opt/backer/local'
   default: true
 middlewares: []
+mandates: {}

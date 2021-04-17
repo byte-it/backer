@@ -1,7 +1,8 @@
 import {ContainerInspectInfo} from 'dockerode';
 import {singleton} from 'tsyringe';
-import {BackupSourceMysql} from './BackupSourceMysql';
+import {BackupSourceMysql, IMysqlLabels} from './BackupSourceMysql';
 import {IBackupSource} from './IBackupSource';
+import {ILabels} from '../Interfaces';
 
 /**
  * BackupSourceProvider is a factory to instantiate {@link IBackupSource}s by config.
@@ -16,12 +17,12 @@ export class BackupSourceFactory {
    *
    * @throws Error If no matching backup source is found
    */
-  public createBackupSource(container: ContainerInspectInfo): IBackupSource {
+  public createBackupSource(container: ContainerInspectInfo, labels: ILabels | IMysqlLabels): IBackupSource {
 
-    const type = container.Config.Labels['backer.type'];
+    const type = labels.type;
     switch (type) {
       case 'mysql':
-        return BackupSourceMysql.fromContainer(container);
+        return BackupSourceMysql.fromContainer(container, labels as IMysqlLabels);
       default:
         throw new Error(`Container ${!container.Name}: No backup source for '${type}' found`);
     }

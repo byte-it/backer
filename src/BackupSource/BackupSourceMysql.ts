@@ -44,9 +44,8 @@ export class BackupSourceMysql implements IBackupSource {
         });
     }
 
-    public static fromContainer(inspectInfo: ContainerInspectInfo): BackupSourceMysql {
+    public static fromContainer(inspectInfo: ContainerInspectInfo, labels: IMysqlLabels): BackupSourceMysql {
         const logger = container.resolve<Logger>('Logger');
-        const labels: IMysqlLabels = extractLabels(inspectInfo.Config.Labels) as IMysqlLabels;
         const containerName = inspectInfo.Name.replace('/', '');
 
         const defaultLogMeta = {

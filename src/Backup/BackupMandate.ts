@@ -19,6 +19,7 @@ import {RetentionJob} from '../Queue/RetentionJob';
 import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
 import {MiddlewareJob} from '../Queue/MiddlewareJob';
 import {DateTime} from 'luxon';
+import {ILabels} from '../Interfaces';
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
@@ -111,8 +112,14 @@ export class BackupMandate {
      * @return {BackupMandate}
      */
     public static fromContainer(inspectInfo: ContainerInspectInfo): BackupMandate {
-        const logger: Logger = container.resolve<Logger>('Logger');
         const containerName = inspectInfo.Name.replace('/', '');
+        let labels = extractLabels(inspectInfo.Config.Labels);
+        return this.fromStatic(containerName, labels, inspectInfo);
+    }
+
+    public static fromStatic(containerName: string, labels: ILabels, inspectInfo: ContainerInspectInfo): BackupMandate {
+
+        const logger: Logger = container.resolve<Logger>('Logger');
 
         const defaultLogMeta = {
             containerName,
@@ -133,8 +140,6 @@ export class BackupMandate {
             namePattern: '<DATE>-<CONTAINER_NAME>',
             retention: '10',
         };
-
-        let labels = extractLabels(inspectInfo.Config.Labels);
 
         labels = Object.assign(defaultLabels, labels);
 
@@ -171,7 +176,7 @@ export class BackupMandate {
             target = container.resolve<IBackupTarget>('target.default');
         }
 
-        const source = sourceProvider.createBackupSource(inspectInfo);
+        const source = sourceProvider.createBackupSource(inspectInfo, labels);
 
         const middlewareStack = [];
 
