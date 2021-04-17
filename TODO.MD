@@ -16,7 +16,7 @@
 - [x] Async factory with decorators and interface for Targets (Decorators cause jsdoc to fail with factory methods )
 - [x] Add MD5 per step and final to manifest
 - [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
-- [ ] Static config for containers
+- [x] Static config for containers
 
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
