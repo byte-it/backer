@@ -20,7 +20,7 @@ async function bootstrap() {
     const logger = winston.createLogger({
         transports: [
             new winston.transports.Console({
-                level: 'debug'
+                level: config.get<string>('logLevel')
             }),
         ],
     });
