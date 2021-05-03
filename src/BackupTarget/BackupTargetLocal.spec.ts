@@ -4,19 +4,20 @@ import * as fs from 'fs';
 import * as Path from 'path';
 import * as rimraf from 'rimraf';
 import {container} from 'tsyringe';
-import {BackupTargetLocal} from './BackupTargetLocal';
 import {IBackupManifest} from '../IBackupManifest';
+import {BackupTargetLocal} from './BackupTargetLocal';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 
 use(chaiAsPromised);
 
-const testConfig = {type: 'local', name: 'test', dir: './.tmp/targets/test'};
+const testConfig = {type: 'local', name: 'test', dir: './tmp/test/targets/test'};
+const testTargetPath = Path.join(process.cwd(), testConfig.dir);
 beforeEach(() => {
-    fs.mkdirSync(Path.join(process.cwd(), '.tmp/targets/test'), {recursive: true});
+    fs.mkdirSync(testTargetPath, {recursive: true});
 });
 afterEach(() => {
-    rimraf.sync(`${process.cwd()}/.tmp/`);
+    rimraf.sync(testTargetPath);
 });
 describe('BackupTargetLocal', () => {
     describe('#constructor()', () => {
@@ -27,27 +28,27 @@ describe('BackupTargetLocal', () => {
         describe('backup dir', () => {
             it('should handle no trailing slashes', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
-                expect(target.backupDir).to.equal(Path.join(process.cwd(), '.tmp/targets/test'));
+                expect(target.backupDir).to.equal(testTargetPath);
             });
 
             it('should handle trailing slashes', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), {
                     type: 'local',
                     name: 'test',
-                    dir: './.tmp/targets/test/',
+                    dir: './tmp/test/targets/test',
                 });
-                expect(target.backupDir).to.equal(Path.join(process.cwd(), '.tmp/targets/test'));
+                expect(target.backupDir).to.equal(testTargetPath);
             });
 
             it('should calculate the absolute path based on cwd if the localDir is relative', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
-                expect(target.backupDir).to.equal(Path.join(process.cwd(), '.tmp/targets/test'));
+                expect(target.backupDir).to.equal(testTargetPath);
             });
 
             it('should write the manifest to the fs', async () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), testConfig);
                 await target.init();
-                const readManifest = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '.tmp/targets/test/manifest.json'), {encoding: 'utf-8'}));
+                const readManifest = JSON.parse(fs.readFileSync(Path.join(testTargetPath, 'manifest.json'), {encoding: 'utf-8'}));
 
                 expect(readManifest).to.deep.equal(target.getManifest());
             });
@@ -80,9 +81,10 @@ describe('BackupTargetLocal', () => {
                     {
                         processor: 'test',
                         uri: tmpPath,
-                        fileName: Path.basename(tmpPath)
-                    }
-                ]
+                        fileName: Path.basename(tmpPath),
+                        md5: '',
+                    },
+                ],
             };
 
             await target.addBackup(manifest);
@@ -95,7 +97,6 @@ describe('BackupTargetLocal', () => {
 
         it('should create the the directory for the container', async () => {
             await createBackup();
-
             expect(fs.existsSync(Path.join(process.cwd(), '.tmp/targets/test/test'))).to.equal(true);
         });
 
@@ -109,6 +110,7 @@ describe('BackupTargetLocal', () => {
             const {target} = await createBackup();
             const manifest = target.getManifest();
 
+            // tslint:disable-next-line:no-unused-expression
             expect(manifest.backups).to.be.an('array').that.is.not.empty;
         });
 
@@ -121,7 +123,7 @@ describe('BackupTargetLocal', () => {
 
         it('should write the updated manifest to the fs', async () => {
             const {target} = await createBackup();
-            const readManifest = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '.tmp/targets/test/manifest.json'), {encoding: 'utf-8'}));
+            const readManifest = JSON.parse(fs.readFileSync(Path.join(testTargetPath, 'manifest.json'), {encoding: 'utf-8'}));
 
             expect(readManifest).to.deep.equal(target.getManifest());
         });
@@ -130,6 +132,7 @@ describe('BackupTargetLocal', () => {
             const {target} = await createBackup();
             const manifest = target.getManifest();
 
+            // tslint:disable-next-line:no-unused-expression
             expect(manifest.backups).to.be.an('array').that.is.not.empty;
         });
 
@@ -144,8 +147,9 @@ describe('BackupTargetLocal', () => {
                 steps: [{
                     processor: 'test',
                     uri: `${process.cwd()}/idonotexist`,
-                    fileName: 'test'
-                }]
+                    fileName: 'test',
+                    md5: '',
+                }],
             };
 
             return expect(target.addBackup(manifest)).to.be.rejectedWith(FileNotFound);
@@ -165,9 +169,10 @@ describe('BackupTargetLocal', () => {
                     {
                         processor: 'test',
                         uri: tmpPath,
-                        fileName: 'test'
-                    }
-                ]
+                        fileName: 'test',
+                        md5: '',
+                    },
+                ],
             };
 
             fs.writeFileSync(tmpPath, '');

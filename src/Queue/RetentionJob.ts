@@ -1,9 +1,14 @@
 import {IBackupManifest} from '../IBackupManifest';
-import {Job} from './Job';
-import {IBackupTarget} from '../BackupTarget/IBackupTarget';
-import {BackupMandate} from '../Backup/BackupMandate';
+import {AJob} from './AJob';
 
-export class RetentionJob extends Job {
+export class RetentionJob extends AJob {
+
+    public toJSON(): object {
+        return {
+            ...super.toJSON(),
+            type: 'retention',
+        };
+    }
 
     /**
      * @todo add logging

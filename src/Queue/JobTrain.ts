@@ -1,28 +1,23 @@
-import { v1 as uuid } from 'uuid';
 import {IBackupManifest} from '../IBackupManifest';
-import {Job} from './Job';
+import {AJob} from './AJob';
+import {AQueueable} from './AQueueable';
+import {EStatus} from './Queue';
 
 /**
  * A job train is a queued list of it self.
  * It executes a lists of sequential operations to complete the backup.
  */
-export class JobTrain {
-    get uuid(): string {
-        return this._uuid;
-    }
-    set started(value: boolean) {
-        this._started = value;
-    }
-    get started(): boolean {
-        return this._started;
-    }
+export class JobTrain extends AQueueable {
 
-    set enqueued(value: boolean) {
-        this._enqueued = value;
-    }
-
-    get enqueued(): boolean {
-        return this._enqueued;
+    /**
+     * Sets the status and associated timestamps
+     * @param value
+     */
+    set status(value: EStatus) {
+        super.status = value;
+        if (value === EStatus.ENQUEUED) {
+            this._jobs.forEach((job) => job.status = EStatus.ENQUEUED);
+        }
     }
 
     get manifest(): IBackupManifest {
@@ -33,7 +28,7 @@ export class JobTrain {
      * The list of jobs defined for this JobTrain
      * @private
      */
-    private readonly _jobs: Job[];
+    private readonly _jobs: AJob[];
 
     /**
      * The manifest that is kept across all jobs
@@ -41,31 +36,40 @@ export class JobTrain {
      */
     private readonly _manifest: IBackupManifest;
 
-    private _started: boolean = false;
-
-    private _enqueued: boolean = false;
-
-    private _uuid: string;
-
-    constructor(manifest: IBackupManifest, jobs?: Job[]) {
+    constructor(manifest: IBackupManifest, jobs?: AJob[]) {
+        super();
         this._manifest = manifest;
         if (Array.isArray(jobs)) {
             this._jobs = jobs;
         } else {
             this._jobs = [];
         }
-        this._uuid = uuid();
     }
 
-    public enqueue(job: Job): void {
+    public enqueue(job: AJob): void {
         this._jobs.push(job);
     }
 
-    public dequeue(): Job | null {
+    public dequeue(): AJob | null {
         return this._jobs.shift();
     }
 
-    public peak(): Job | null {
+    public peak(): AJob | null {
         return this._jobs[0];
+    }
+
+    public toJSON() {
+        return {
+            uuid: this.uuid,
+            mandate: this._manifest,
+            jobs: this._jobs.map((job) => job.toJSON()),
+            timestamps: {
+                enqueued: this.timestamps.enqueued?.toUTC(),
+                started: this.timestamps.started?.toUTC(),
+                finished: this.timestamps.finished?.toUTC(),
+            },
+            waiting: this.waitingDuration?.toMillis() / 1000,
+            working: this.workingDuration?.toMillis() / 1000,
+        };
     }
 }

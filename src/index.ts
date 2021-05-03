@@ -1,14 +1,15 @@
+import * as config from 'config';
+import {IConfig} from 'config';
 import * as Dockerode from 'dockerode';
 import 'reflect-metadata';
 import {container} from 'tsyringe';
 import * as winston from 'winston';
 import {Logger} from 'winston';
+import {API} from './API/API';
 import {BackupManager} from './BackupManager';
-import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
-import * as config from 'config';
-import {IConfig} from 'config';
-import {Queue} from './Queue/Queue';
 import {BackupMiddlewareProvider} from './BackupMiddleware/BackupMiddlewareProvider';
+import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
+import {Queue} from './Queue/Queue';
 
 /**
  * Bootstraps the application.
@@ -20,7 +21,7 @@ async function bootstrap() {
     const logger = winston.createLogger({
         transports: [
             new winston.transports.Console({
-                level: config.get<string>('logLevel')
+                level: config.get<string>('logLevel'),
             }),
         ],
     });
@@ -40,7 +41,6 @@ async function bootstrap() {
     const targetProvider = container.resolve(BackupTargetProvider);
     await targetProvider.init();
 
-
     const middlewareProvider = container.resolve(BackupMiddlewareProvider);
     await middlewareProvider.init();
 
@@ -48,7 +48,9 @@ async function bootstrap() {
     await backupManager.init();
 
     const queue = container.resolve(Queue);
-    await queue.start();
+    const api = container.resolve(API);
+
+    // await queue.start();
 }
 
 bootstrap().then(() => {});

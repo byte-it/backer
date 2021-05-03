@@ -1,26 +1,19 @@
 import * as AWS from 'aws-sdk';
-import {S3} from 'aws-sdk';
-import * as config from 'config';
 import * as AWSMock from 'aws-sdk-mock';
 import {expect, use} from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import {IConfig} from 'config';
 import * as fs from 'fs';
 import * as Path from 'path';
-import * as rimraf from 'rimraf';
 import {container} from 'tsyringe';
-import {IBackupTargetManifest} from '../IBackupManifest';
-import {BackupTargetLocal} from './BackupTargetLocal';
+import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
 import {FileNotAccessible} from './Exceptions/FileNotAccessible';
 import {FileNotFound} from './Exceptions/FileNotFound';
-import {FileNotWriteable} from './Exceptions/FileNotWriteable';
-import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
-import {IConfig} from 'config';
 
 use(chaiAsPromised);
 
-const testConfig = {type: 'local', name: 'test', dir: './.tmp/targets/test'};
 beforeEach(() => {
     fs.mkdirSync(Path.join(container.resolve<IConfig>('Config').get('tmpPath'), 's3'), {recursive: true});
 });
@@ -31,13 +24,13 @@ afterEach(() => {
 describe('BackupTargetS3', () => {
     describe('#constructor', () => {
         it('should set the s3Client, bucket and name', () => {
-            const config: IBackupTargetS3Config = {
+            const targetConfig: IBackupTargetS3Config = {
                 type: 's3',
                 name: 'test',
                 bucket: 'test',
                 s3Client: {},
             };
-            const target = new BackupTargetS3(container.resolve('Logger'), config);
+            const target = new BackupTargetS3(container.resolve('Logger'), targetConfig);
 
             expect(target.bucket).to.equal('test');
             expect(target.name).to.equal('test');
@@ -53,14 +46,14 @@ describe('BackupTargetS3', () => {
             AWSMock.mock('S3', 'putObject', () => {
                 return {};
             });
-            const config: IBackupTargetS3Config = {
+            const targetConfig: IBackupTargetS3Config = {
                 type: 's3',
                 name: 'test',
                 bucket: 'test',
                 s3Client: {},
             };
             const s3Client = new AWS.S3({});
-            const promise = BackupTargetS3.createInstance(config, s3Client);
+            const promise = BackupTargetS3.createInstance(targetConfig, s3Client);
             expect(promise).to.be.an.instanceof(Promise);
             AWSMock.restore('S3');
         });
@@ -71,6 +64,7 @@ describe('BackupTargetS3', () => {
                     type: 's3',
                 },
                 backups: [],
+                version: '0.0.1',
             };
             AWSMock.mock('S3', 'headBucket', (params, callback) => {
                 callback(null, {});
@@ -87,7 +81,7 @@ describe('BackupTargetS3', () => {
                     callback(null, {});
                 }
             });
-            const config: IBackupTargetS3Config = {
+            const targetConfig: IBackupTargetS3Config = {
                 type: 's3',
                 name: 'test',
                 bucket: 'test',
@@ -95,7 +89,7 @@ describe('BackupTargetS3', () => {
             };
 
             const s3Client = new AWS.S3({});
-            const instance = await BackupTargetS3.createInstance(config, s3Client);
+            const instance = await BackupTargetS3.createInstance(targetConfig, s3Client);
 
             expect(instance).to.be.an.instanceof(BackupTargetS3);
 
@@ -106,7 +100,7 @@ describe('BackupTargetS3', () => {
 
     describe('#isTargetWriteable', () => {
         // Default config for all tests
-        const config: IBackupTargetS3Config = {
+        const targetConf: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -120,7 +114,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
             const isWriteable = await instance.isTargetWriteable();
 
             expect(isWriteable).to.equal(true);
@@ -136,7 +130,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
             const isWriteable = await instance.isTargetWriteable();
 
             expect(isWriteable).to.equal(false);
@@ -152,7 +146,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
             const isWriteable = await instance.isTargetWriteable();
 
             expect(isWriteable).to.equal(false);
@@ -168,7 +162,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
             const isWriteable = await instance.isTargetWriteable();
 
             expect(isWriteable).to.equal(false);
@@ -180,7 +174,7 @@ describe('BackupTargetS3', () => {
 
     describe('#doesFileExistOnTarget', () => {
         // Default config for all tests
-        const config: IBackupTargetS3Config = {
+        const targetConfig: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -193,7 +187,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             const isWriteable = await instance.doesFileExistOnTarget('test');
 
             expect(isWriteable).to.equal(true);
@@ -209,7 +203,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             const isWriteable = await instance.doesFileExistOnTarget('test');
 
             expect(isWriteable).to.equal(false);
@@ -224,7 +218,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             expect(instance.doesFileExistOnTarget('test')).to.be.rejectedWith(FileNotAccessible);
 
             AWSMock.restore('S3');
@@ -232,7 +226,7 @@ describe('BackupTargetS3', () => {
         });
     });
     describe('#moveBackupToTarget', () => {
-        const config: IBackupTargetS3Config = {
+        const targetConf: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -246,12 +240,13 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
-            const manifest = {
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
+            const manifest: IBackupManifest = {
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
+                steps: [],
             };
 
             const tmpPath = Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/s3/empty');
@@ -268,26 +263,26 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
-            const manifest = {
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
+            const manifest: IBackupManifest = {
+                steps: [],
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
             };
 
-
             const tmpPath = Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/s3/empty');
             fs.writeFileSync(tmpPath, 'test');
-            return expect(instance.moveBackupToTarget(tmpPath, 'empty', manifest)).to.be.rejectedWith(FilePermissionDenied);
+            expect(instance.moveBackupToTarget(tmpPath, 'empty', manifest)).to.be.rejectedWith(FilePermissionDenied);
         });
         it('should return the manifest with the correct final path', async () => {
-
+            return;
         });
     });
 
     describe('#removeBackupFromTarget', () => {
-        const config: IBackupTargetS3Config = {
+        const targetConfig: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -302,13 +297,14 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
-            const manifest = {
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
+            const manifest: IBackupManifest = {
                 name: 'test.test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
                 path: 'test/test.test',
+                steps: [],
             };
 
             await instance.deleteBackupFromTarget(manifest);
@@ -323,13 +319,14 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
-            const manifest = {
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
+            const manifest: IBackupManifest = {
                 name: 'test.test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
                 path: 'test/test.test',
+                steps: [],
             };
             expect(instance.deleteBackupFromTarget(manifest)).to.be.rejectedWith(FileNotFound);
             AWSMock.restore('S3');
@@ -343,20 +340,21 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
-            const manifest = {
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
+            const manifest: IBackupManifest = {
                 name: 'test.test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
                 path: 'test/test.test',
+                steps: [],
             };
             return expect(instance.deleteBackupFromTarget(manifest)).to.be.rejectedWith(FilePermissionDenied);
         });
     });
 
     describe('#readManifestFromTarget', () => {
-        const config: IBackupTargetS3Config = {
+        const targetConfig: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -368,6 +366,7 @@ describe('BackupTargetS3', () => {
                 type: 's3',
             },
             backups: [],
+            version: '0.0.1',
         };
         it('should read the manifest from the bucket', async () => {
 
@@ -378,7 +377,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             expect(await instance.readManifestFromTarget()).to.deep.equal(expectedManifest);
             AWSMock.restore('S3');
             return;
@@ -391,7 +390,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             expect(instance.readManifestFromTarget()).to.be.rejectedWith(FileNotFound);
             AWSMock.restore('S3');
             return;
@@ -404,13 +403,13 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             return expect(instance.readManifestFromTarget()).to.be.rejectedWith(FilePermissionDenied);
         });
     });
 
     describe('#writeManifestToTarget', () => {
-        const config: IBackupTargetS3Config = {
+        const targetConfig: IBackupTargetS3Config = {
             type: 's3',
             name: 'test',
             bucket: 'test',
@@ -422,6 +421,7 @@ describe('BackupTargetS3', () => {
                 type: 's3',
             },
             backups: [],
+            version: '0.0.1',
         };
         it('should write the manifest to the bucket', async () => {
             AWSMock.mock('S3', 'putObject', (params, callback) => {
@@ -432,7 +432,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             // @ts-ignore
             instance.manifest = expectedManifest;
             await instance.writeManifestToTarget();
@@ -446,7 +446,7 @@ describe('BackupTargetS3', () => {
 
             const s3Client = new AWS.S3({});
 
-            const instance = new BackupTargetS3(container.resolve('Logger'), config, s3Client);
+            const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
             return expect(instance.writeManifestToTarget()).to.eventually.be.rejectedWith(FilePermissionDenied);
         });
     });

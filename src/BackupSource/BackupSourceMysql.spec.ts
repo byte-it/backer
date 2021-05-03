@@ -1,19 +1,23 @@
 import {expect} from 'chai';
-import * as Path from 'path';
-import {BackupSourceMysql} from './BackupSourceMysql';
-import {container} from 'tsyringe';
 import {IConfig} from 'config';
+import * as Path from 'path';
+import {container} from 'tsyringe';
+import {extractLabels} from '../Util';
+import {BackupSourceMysql} from './BackupSourceMysql';
 
 describe('BackupSourceMysql', () => {
     describe('#fromContainer()', () => {
         it('should throw an error if the mysql user is missing', () => {
-            expect(() => BackupSourceMysql.fromContainer(null)).to.throw(Error);
+            // @ts-ignore
+            expect(() => BackupSourceMysql.fromContainer(null, {})).to.throw(Error);
         });
         it('should throw an error if the host can\'t be found', () => {
-            expect(() => BackupSourceMysql.fromContainer(null)).to.throw(Error);
+            // @ts-ignore
+            expect(() => BackupSourceMysql.fromContainer(null, {})).to.throw(Error);
         });
         it('should throw an error if some required label is missing', () => {
-            expect(() => BackupSourceMysql.fromContainer(null)).to.throw(Error);
+            // @ts-ignore
+            expect(() => BackupSourceMysql.fromContainer(null, {})).to.throw(Error);
         });
         it('should prefer ignore list over include list', () => {
 
@@ -41,7 +45,7 @@ describe('BackupSourceMysql', () => {
             };
 
             // @ts-ignore
-            const source = BackupSourceMysql.fromContainer(testContainer);
+            const source = BackupSourceMysql.fromContainer(testContainer, extractLabels(testContainer.Config.Labels));
             // @ts-ignore
             expect(source.includeTablesList).to.equal(null);
         });
@@ -71,7 +75,7 @@ describe('BackupSourceMysql', () => {
             };
 
             // @ts-ignore
-            const source = BackupSourceMysql.fromContainer(testContainer);
+            const source = BackupSourceMysql.fromContainer(testContainer,  extractLabels(testContainer.Config.Labels));
             // @ts-ignore
             expect(source.includeTablesList).to.equal(null);
         });
@@ -101,7 +105,7 @@ describe('BackupSourceMysql', () => {
             };
 
             // @ts-ignore
-            const source = BackupSourceMysql.fromContainer(testContainer);
+            const source = BackupSourceMysql.fromContainer(testContainer, extractLabels(testContainer.Config.Labels));
 
             expect(source.options).to.include({
                 optionkey: 'optionvalue',

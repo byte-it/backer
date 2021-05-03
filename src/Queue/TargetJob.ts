@@ -4,11 +4,11 @@ import {container} from 'tsyringe';
 import {BackupMandate} from '../Backup/BackupMandate';
 import {IBackupTarget} from '../BackupTarget/IBackupTarget';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
-import {Job} from './Job';
+import {AJob} from './AJob';
 import {getLastStep} from '../Util';
 
 
-export class TargetJob extends Job {
+export class TargetJob extends AJob {
 
     /**
      * @todo add logging
@@ -18,7 +18,7 @@ export class TargetJob extends Job {
 
         this._mandate.logger.log({
             level: 'debug',
-            message: `Start target '${this._mandate.target.name}'`
+            message: `Start target '${this._mandate.target.name}'`,
         });
 
         await this._mandate.target.addBackup(manifest);
@@ -30,5 +30,12 @@ export class TargetJob extends Job {
         });
 
         return manifest;
+    }
+
+    public toJSON(): object {
+        return {
+            ...super.toJSON(),
+            type: 'target',
+        };
     }
 }

@@ -7,12 +7,25 @@ It has support for multiple backup sources (database servers) and multiple backu
 Backer gets its configuration from the database containers itself by reading their labels and a static configuration.
 This method requires Backer to have access to the docker daemon itself via socket. 
 
-## Supported sources
+## Content
+
+- [Features](#features)
+- [Configuration](#configuration)
+- [API](#api)
+- [CLI](#cli)
+
+## Features
+
+### Sources
 - `mysql`
 
-## Supported targets
+### Targets
 - Local filesystem
 - `S3` and compatible (minio)
+
+### Middleware
+- gzip
+- ccrypt
 
 ## Configuration
 
@@ -57,6 +70,41 @@ targets:
         accessKeyId: 'minio'
         secretAccessKey: 'minio123'
         s3ForcePathStyle: true
+```
+
+#### Middleware
+
+##### gzip
+```yaml
+middleware:
+- name: 'compression'
+  type: 'gzip'
+```
+
+##### ccrypt
+
+```yaml
+middleware:
+- name: 'encryption'
+  type: 'ccrypt'
+  key: 'secure'
+```
+
+#### Mandates
+
+```yaml
+mandates:
+  CONTAINER_NAME:
+    labels:
+      type: 'mysql'
+      interval: '* * * * *'
+      network: 'test_default'
+      mysql:
+        user: 'Text:root'
+        password: 'Env:MYSQL_ROOT_PASSWORD'
+        database: 'Env:MYSQL_DATABASE'
+      target: 'minio'
+      middleware: 'compression,encryption'
 ```
 
 ### Dynamic
@@ -147,5 +195,9 @@ A list of unsupported options:
 - `--user`
 - `--password`
 - `--result-file`
+
+## API
+
+## CLI
 
 ## Development

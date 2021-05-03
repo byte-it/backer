@@ -1,3 +1,7 @@
+api:
+  web: true
+  socket: true
+logLevel: 'debug'
 targets:
 - name: 'default'
   type: 'local'

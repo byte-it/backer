@@ -1,5 +1,10 @@
 # TODO
 
+## Sublists
+- [ ] [Queue](src/Queue/TODO.md)
+- [ ] [API](src/API/TODO.md)
+- [ ] [CLI](cli/TODO.md)
+
 ## Basic features
 - [x] Implement basic cron handling
 - [x] Implement backup tasks (dump & copying to target in job queue)
@@ -17,7 +22,7 @@
 - [x] Add MD5 per step and final to manifest
 - [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
 - [x] Static config for containers
-
+- [ ] Automated docker build
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something
@@ -34,9 +39,7 @@
 - [ ] Improved queque parallelity and concurence
 - [ ] "File source" to backup Docker Volumes
 - [ ] Static pre configuration for sources
-- [ ] Implement postgres source
-- [ ] REST-API (express http/socket)
-- [ ] CLI via socket (oclif)
+- [ ] Implement postgres sources
 - [ ] Job queue priority
 - [ ] Recover from failure
 - [ ] Failure Reporting

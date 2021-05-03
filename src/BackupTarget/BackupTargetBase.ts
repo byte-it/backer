@@ -56,7 +56,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
             if (result.hasOwnProperty('error')) {
                 throw new ManifestInvalid(result.error.toString());
             }
-            if (this.manifest.version != process.env.npm_package_version) {
+            if (this.manifest.version !== process.env.npm_package_version) {
                 this.manifest.version = process.env.npm_package_version;
             }
         } catch (e) {

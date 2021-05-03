@@ -1,10 +1,10 @@
+import {IConfig} from 'config';
 import * as Dockerode from 'dockerode';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
 import {BackupMandate} from './Backup/BackupMandate';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {IDockerContainerEvent, IDockerEvent, ILabels} from './Interfaces';
-import {IConfig} from 'config';
 
 /**
  * BackupManager is responsible for the bookkeeping of all active backup mandates.
@@ -22,12 +22,13 @@ export class BackupManager {
      * A list of static provided configs for mandates
      * @private
      */
-    private readonly _staticMandateConfigs: { [containerName: string]: { labels: ILabels } }
+    private readonly _staticMandateConfigs: { [containerName: string]: { labels: ILabels } };
 
     /**
      * Constructor
      * @param {Dockerode} docker The Dockerode instance to watch the docker daemon.
      * @param {winston.Logger} logger The logger.
+     * @param {IConfig} config
      * @param {BackupTargetProvider}  targetProvider The target provider.
      */
     constructor(
@@ -43,7 +44,7 @@ export class BackupManager {
     public async createBackup(containerId: string): Promise<BackupMandate> {
         const inspect = await this.docker.getContainer(containerId).inspect();
         const containerName = inspect.Name.replace('/', '');
-        if (!!inspect.Config.Labels['backer.enabled'] == true) {
+        if (!!inspect.Config.Labels['backer.enabled'] === true) {
             try {
                 const backup = BackupMandate.fromContainer(inspect);
                 this.addBackup(backup);
@@ -52,9 +53,12 @@ export class BackupManager {
                 this.logger.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
                 return Promise.reject(error.message);
             }
-        } else if (typeof this._staticMandateConfigs[containerName] != 'undefined') {
+        } else if (typeof this._staticMandateConfigs[containerName] !== 'undefined') {
             try {
-                const backup = BackupMandate.fromStatic(containerName, this._staticMandateConfigs[containerName].labels, inspect);
+                const backup = BackupMandate.fromStatic(
+                    containerName,
+                    this._staticMandateConfigs[containerName].labels,
+                    inspect);
                 this.addBackup(backup);
                 return Promise.resolve<BackupMandate>(backup);
             } catch (error) {
@@ -65,7 +69,7 @@ export class BackupManager {
 
         this.logger.log({
             level: 'debug',
-            message: `No backer config found for ${containerId}`
+            message: `No backer config found for ${containerId}`,
         });
         return Promise.reject(`No backer config found for ${containerId}`);
     }
@@ -76,6 +80,13 @@ export class BackupManager {
      */
     public addBackup(backup: BackupMandate): void {
         this._backups[backup.containerId] = backup;
+    }
+
+    /**
+     * Retrieves all backup mandates
+     */
+    public getBackups(): BackupMandate[] {
+        return Object.values<BackupMandate>(this._backups);
     }
 
     /**
@@ -110,12 +121,12 @@ export class BackupManager {
         this.logger.info('Read already started container');
         const containers = await this.docker.listContainers();
         for (const container of containers) {
-            this.logger.debug(`Found ${container.Id}`)
+            this.logger.debug(`Found ${container.Id}`);
             this.createBackup(container.Id).catch((e) => {
                 this.logger.log({
                     level: 'debug',
                     message: e,
-                })
+                });
             });
         }
 

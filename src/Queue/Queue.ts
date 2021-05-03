@@ -1,19 +1,29 @@
 import {inject, singleton} from 'tsyringe';
-import {Job} from './Job';
-import {IBackupManifest} from '../IBackupManifest';
-import {JobTrain} from './JobTrain';
 import {Logger} from 'winston';
-import {setInterval} from 'timers';
+import {JobTrain} from './JobTrain';
+
+export enum EStatus {
+    CREATED,
+    ENQUEUED,
+    STARTED,
+    FINISHED,
+    FAILED,
+}
 
 /**
  * A Queue that works with concatenated jobs.
  *
  * @todo TEST
+ * @todo Some stats?
  */
 @singleton()
 export class Queue {
 
-    private _trains: JobTrain[] =  [];
+    get trains(): JobTrain[] {
+        return this._trains;
+    }
+
+    private _trains: JobTrain[] = [];
 
     private _working: boolean = false;
 
@@ -33,10 +43,10 @@ export class Queue {
      * @param train
      */
     public enqueueTrain(train: JobTrain) {
-        train.enqueued = true;
+        train.status = EStatus.ENQUEUED;
         this._logger.log({
             level: 'debug',
-            message: `Enqueue Train ${train.uuid}`
+            message: `Enqueue Train ${train.uuid}`,
         });
         return this._trains.push(train);
     }
@@ -56,7 +66,7 @@ export class Queue {
      * Stops the queue processing gracefully after the current job is finished.
      * @return Promise The promise is resolved when the queue stops after finishing the current job.
      */
-    public stop(): Promise<null>{
+    public stop(): Promise<null> {
         this._working = false;
         return this._workingPromise;
     }
@@ -67,22 +77,26 @@ export class Queue {
      */
     private async work(): Promise<null> {
         while (this._working) {
-            await new Promise<void>(resolve => setTimeout(resolve, 100));
+            await new Promise<void>((resolve) => setTimeout(resolve, 100));
             if (this._trains.length > 0) {
+
                 const train = this._trains.shift();
                 this._trainPromise = new Promise(async (resolve, reject) => {
-                    train.started = true;
+
+                    train.status = EStatus.STARTED;
                     let failed = false;
+
                     this._logger.log({
                         level: 'debug',
-                        message: `Start train ${train.uuid}`
+                        message: `Start train ${train.uuid}. Waited for ${train.waitingDuration.as('seconds')} seconds.`,
                     });
-                    while (this._working && train.peak() != null && failed == false) {
+
+                    while (this._working && train.peak() != null && failed === false) {
                         const job = train.dequeue();
                         try {
                             this._logger.log({
                                 level: 'debug',
-                                message: `Start job ${job.uuid}`
+                                message: `Start job ${job.uuid}. Waited for ${job.waitingDuration.as('seconds')} seconds.`,
                             });
 
                             this._jobPromise = job.start(train.manifest);
@@ -90,7 +104,7 @@ export class Queue {
 
                             this._logger.log({
                                 level: 'debug',
-                                message: `Finished job ${job.uuid}`
+                                message: `Finished job ${job.uuid}. Took  ${job.workingDuration.as('seconds')} seconds.`,
                             });
                         } catch (e) {
                             this._logger.log({
@@ -100,18 +114,23 @@ export class Queue {
                                 containerName: train.manifest.containerName,
                             });
                             failed = true;
+                            job.status = EStatus.FAILED;
+                            train.status = EStatus.FAILED;
                         }
                     }
                     // Put the train back in queue if queue is stopped
-                    if(!this._working && train.peak() != null){
+                    if (!this._working && train.peak() != null) {
                         this._trains.unshift(train);
+                    } else {
+                        train.status = EStatus.FINISHED;
                     }
                     resolve(null);
                 });
-
+                await this._trainPromise;
+                // @todo: store failed trains or something
                 this._logger.log({
                     level: 'debug',
-                    message: `Finished train ${train.uuid}`
+                    message: `Finished train ${train.uuid}. Took  ${train.workingDuration.as('seconds')} seconds.`,
                 });
             }
         }

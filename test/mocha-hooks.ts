@@ -12,6 +12,7 @@ export const mochaHooks = {
      * Setup all needed injectables for the container.
      */
     beforeEach() {
+        process.env.npm_package_version = '0.0.1';
         container.registerInstance<Logger>('Logger', createLogger({
             transports: [
                 new transports.Console({

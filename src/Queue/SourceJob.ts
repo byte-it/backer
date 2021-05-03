@@ -1,11 +1,10 @@
+import {BackupMandate} from '../Backup/BackupMandate';
 import {IBackupSource} from '../BackupSource/IBackupSource';
 import {IBackupManifest} from '../IBackupManifest';
-import {Job} from './Job';
-import {BackupMandate} from '../Backup/BackupMandate';
 import {getLastStep} from '../Util';
+import {AJob} from './AJob';
 
-
-export class SourceJob extends Job {
+export class SourceJob extends AJob {
 
     /**
      * @todo add logging
@@ -14,7 +13,7 @@ export class SourceJob extends Job {
     public async execute(manifest): Promise<IBackupManifest> {
         this._mandate.logger.log({
             level: 'debug',
-            message: `Start source '${this._mandate.source.name}'`
+            message: `Start source '${this._mandate.source.name}'`,
         });
 
         return await this._mandate.source.backup(manifest);
@@ -24,5 +23,12 @@ export class SourceJob extends Job {
             message: `Finished source '${this._mandate.source.name}'`,
             step: getLastStep(manifest),
         });
+    }
+
+    public toJSON(): object {
+        return {
+            ...super.toJSON(),
+            type: 'source',
+        };
     }
 }

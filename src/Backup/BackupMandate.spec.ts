@@ -56,7 +56,7 @@ describe('BackupMandate', () => {
             expect(backup.namePattern).to.equal('test');
             expect(backup.retention).to.equal(10);
 
-            backup.stop();
+            await backup.stop();
         });
 
         it('should apply the default labels correctly', async () => {
@@ -90,7 +90,7 @@ describe('BackupMandate', () => {
             expect(backup.namePattern).to.equal('<DATE>-<CONTAINER_NAME>');
             expect(backup.retention).to.equal(10);
 
-            backup.stop();
+            await backup.stop();
         });
         it('should throw a validation error if the labels don\'t meet the schema', () => {
             const testContainer = {
@@ -163,8 +163,8 @@ describe('BackupMandate', () => {
             expect(() => BackupMandate.fromContainer(testContainer)).to.throw(Error);
         });
     });
-    describe('#createName()', () => {
-        it('should replace DATE and CONTAINER_NAME correctly', () => {
+    describe('#createName()',  () => {
+        it('should replace DATE and CONTAINER_NAME correctly', async () => {
             const containerId = 'TheContainerId';
             const containerName = 'TheContainerName';
             const pattern = '<DATE>-<CONTAINER_NAME>';
@@ -184,7 +184,8 @@ describe('BackupMandate', () => {
                 }, null, '0 0 * * *', '0', pattern);
             const expectedName = `${date.toFormat('yyyyMMdd-HH-mm')}-${containerName}`;
             expect(backup.createName(date)).to.equal(expectedName);
-            backup.stop();
+
+            await backup.stop();
         });
     });
 
@@ -210,7 +211,7 @@ describe('BackupMandate', () => {
             return backup;
         };
 
-        it('should not return manifests if there are less then the maximum retention number', () => {
+        it('should not return manifests if there are less then the maximum retention number', async () => {
             const backup = createMandate();
 
             // @ts-ignore
@@ -222,9 +223,12 @@ describe('BackupMandate', () => {
             }]);
 
             expect(toDelete).to.be.an('array').that.is.empty;
+
+
+            await backup.stop();
         });
 
-        it('should not return manifest if there are exact as much backups as the retention says', () => {
+        it('should not return manifest if there are exact as much backups as the retention says', async () => {
             const backup = createMandate();
 
 
@@ -247,9 +251,11 @@ describe('BackupMandate', () => {
             ]);
 
             expect(toDelete).to.be.an('array').that.is.empty;
+
+            await backup.stop();
         });
 
-        it('should return 1 manifest if there are 3 manifest and retention is 2', () => {
+        it('should return 1 manifest if there are 3 manifest and retention is 2', async () => {
             const backup = createMandate();
 
             // @ts-ignore
@@ -278,9 +284,11 @@ describe('BackupMandate', () => {
             ]);
 
             expect(toDelete).to.have.lengthOf(1);
+
+            await backup.stop();
         });
 
-        it('should return the oldest manifest', () => {
+        it('should return the oldest manifest', async () => {
             const backup = createMandate();
             const manifests = [
                 {
@@ -308,9 +316,12 @@ describe('BackupMandate', () => {
             const toDelete = backup.calculateRetention(manifests);
 
             expect(toDelete).to.have.members([manifests[0]]);
+
+
+            await backup.stop();
         });
 
-        it('should return the oldest two manifests', () => {
+        it('should return the oldest two manifests', async () => {
             const backup = createMandate();
             const manifests = [
                 {
@@ -345,6 +356,8 @@ describe('BackupMandate', () => {
             const toDelete = backup.calculateRetention(manifests);
 
             expect(toDelete).to.have.members([manifests[0], manifests[1]]);
+
+            await backup.stop();
         });
 
     });

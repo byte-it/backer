@@ -2,6 +2,9 @@ tmpPath: '/var/tmp/backer'
 defaultTarget: 'local'
 socketPath: '/var/run/docker.sock'
 logLevel: 'info'
+api:
+  web: false
+  socket: false
 targets:
 - name: 'default'
   type: 'local'

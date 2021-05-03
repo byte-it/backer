@@ -11,7 +11,8 @@ services:
     - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
       NODE_ENV: integration
-
+    ports:
+    - "8080:8080"
   mariadb_local:
     image: mariadb:latest
     labels:

@@ -22,6 +22,10 @@ export class BackupTargetProvider implements IProvider {
      */
     private _defaultTarget: IBackupTarget;
 
+    private _targets: {
+        [name: string]: IBackupTarget;
+    } = {};
+
     constructor(@inject('Config') private config: IConfig, @inject('Logger') private logger: Logger) {
     }
 
@@ -39,19 +43,21 @@ export class BackupTargetProvider implements IProvider {
                     default:
                         throw new Error(`Target ${target.type} not found.`);
                 }
+                const instanceName = ['target', target.name].join('.');
 
-                container.registerInstance(['target', target.name].join('.'), instance);
+                container.registerInstance(instanceName, instance);
                 if (target.default === true) {
                     container.registerInstance(['target', 'default'].join('.'), instance);
                 }
+                this._targets[instanceName] = instance;
                 this.logger.log({
                     level: 'info',
-                    message: `Registered ${['target', target.name].join('.')}. ${target.default ? 'Used as default.' : ''}`,
+                    message: `Registered ${instanceName}. ${target.default ? 'Used as default.' : ''}`,
                 });
             } catch (e) {
                 this.logger.log({
                     level: 'error',
-                    message: `Failed to instanciate target ${target.name}`,
+                    message: `Failed to instantiate target ${target.name}`,
                     error: e,
                 });
             }
@@ -64,5 +70,16 @@ export class BackupTargetProvider implements IProvider {
      */
     public getDefaultBackupTarget(): IBackupTarget {
         return this._defaultTarget;
+    }
+
+    public getTarget(name: string): IBackupTarget {
+        if (this._targets[`target.${name}`]) {
+            return this._targets[`target.${name}`];
+        }
+        return null;
+    }
+
+    public getTargets(): IBackupTarget[] {
+        return Object.values<IBackupTarget>(this._targets);
     }
 }

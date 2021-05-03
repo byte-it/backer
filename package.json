@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/luxon": "^1.26.3",
     "aws-sdk": "^2.885.0",
     "aws-sdk-mock": "^5.1.0",
     "config": "^3.3.6",
@@ -23,6 +22,7 @@
     "docker-events": "0.0.2",
     "dockerode": "^3.2.1",
     "dot-object": "^1.9.0",
+    "express": "^4.17.1",
     "joi": "^17.4.0",
     "luxon": "^1.26.0",
     "make-dir": "^3.1.0",
@@ -37,6 +37,8 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/luxon": "^1.26.3",
     "@types/config": "0.0.36",
     "@types/cron": "^1.7.2",
     "@types/dockerode": "^2.5.34",
