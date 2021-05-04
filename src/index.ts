@@ -50,7 +50,7 @@ async function bootstrap() {
     const queue = container.resolve(Queue);
     const api = container.resolve(API);
 
-    // await queue.start();
+    await queue.start();
 }
 
 bootstrap().then(() => {});

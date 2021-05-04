@@ -18,6 +18,9 @@ export enum EStatus {
  */
 @singleton()
 export class Queue {
+    get stats(): { avg_waiting_time: number; total_backups: number; peak_waiting_time: number } {
+        return {...this._stats};
+    }
 
     get trains(): JobTrain[] {
         return this._trains;
@@ -34,6 +37,12 @@ export class Queue {
     private _jobPromise: Promise<any>;
 
     private _concurent: number = 1;
+
+    private _stats = {
+        peak_waiting_time: 0,
+        avg_waiting_time: 0,
+        total_backups: 0,
+    };
 
     constructor(@inject('Logger') private _logger: Logger) {
     }
@@ -127,6 +136,18 @@ export class Queue {
                     resolve(null);
                 });
                 await this._trainPromise;
+
+                // Track the stats
+                this._stats.total_backups++;
+                const secondsWaited = train.waitingDuration.toMillis() / 1000;
+                this._stats.avg_waiting_time = this._stats.avg_waiting_time === 0 ?
+                    secondsWaited :
+                    (this._stats.avg_waiting_time + (secondsWaited)) / 2;
+
+                if (secondsWaited > this._stats.peak_waiting_time) {
+                    this._stats.peak_waiting_time = secondsWaited;
+                }
+
                 // @todo: store failed trains or something
                 this._logger.log({
                     level: 'debug',

@@ -19,13 +19,7 @@ export abstract class AJob extends AQueueable {
         this.status = EStatus.STARTED;
         try {
             manifest = await this.execute(manifest);
-            await new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(null);
-                }, 1000);
-            });
         } catch (e) {
-
             this.status = EStatus.FAILED;
             throw e;
         }

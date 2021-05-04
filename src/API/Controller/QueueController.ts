@@ -33,7 +33,7 @@ export class QueueController extends BaseController {
 
     public async stats(request: express.Request, response: express.Response) {
         response.status(200).send({
-            data: {},
+            data: this.queue.stats,
         });
     }
 }
