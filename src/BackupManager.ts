@@ -113,6 +113,17 @@ export class BackupManager {
     }
 
     /**
+     * Stops all backups
+     */
+    public stopBackups(): void {
+        for (const containerId in this._backups) {
+            if (this._backups.hasOwnProperty(containerId)) {
+                this.stopBackup(containerId);
+            }
+        }
+    }
+
+    /**
      * Initiates the backup manager.
      * It start crawling all containers for backup sources and watches the
      * docker event stream for started/stopped containers

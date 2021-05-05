@@ -13,3 +13,5 @@
     - [ ] Stats
     - [x] Enqueued jobs
     - [ ] Failed Jobs
+
+- [ ] Delete socket on exit

@@ -1,5 +1,6 @@
 import {IConfig} from 'config';
 import * as express from 'express';
+import * as http from 'http';
 import {inject, singleton} from 'tsyringe';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
@@ -16,7 +17,15 @@ interface IAPIConfig {
 @singleton()
 export class API {
 
-    private readonly _server: express.Application;
+    private readonly _app: express.Application;
+
+    private readonly _servers: {
+        socket: http.Server,
+        http: http.Server,
+    } = {
+        socket: null,
+        http: null,
+    };
 
     private _controller: Array<new(server: express.Application) => IController> = [
         BackupMandateController,
@@ -25,23 +34,36 @@ export class API {
     ];
 
     public constructor(@inject('Config') config: IConfig, @inject('Logger') private _logger: Logger) {
-        this._server = express();
+        this._app = express();
 
-        container.registerInstance<express.Application>('Server', this._server);
+        container.registerInstance<express.Application>('Server', this._app);
 
         const apiConfig = config.get<IAPIConfig>('api');
         for (const controllerConstructor of this._controller) {
             container.resolve<IController>(controllerConstructor);
         }
 
-        if (apiConfig.web) {
-            _logger.info('Start express on port 8080');
-            this._server.listen(8080);
+        try {
+            if (apiConfig.web) {
+                _logger.info('Start express on port 8080');
+                this._servers.http = this._app.listen(8080);
+            }
+        } catch (e) {
+            this._logger.error(e);
         }
 
-        if (apiConfig.socket) {
-            _logger.info('Start express on socket');
-            this._server.listen('/var/run/backer');
+        try {
+            if (apiConfig.socket) {
+                _logger.info('Start express on socket');
+                this._servers.socket = this._app.listen('/var/run/backer');
+            }
+        } catch (e) {
+            this._logger.error(e);
         }
+    }
+
+    public async stop() {
+        this._servers.http?.close();
+        this._servers.socket?.close();
     }
 }
