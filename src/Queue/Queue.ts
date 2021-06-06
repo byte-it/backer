@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
 import {JobTrain} from './JobTrain';
@@ -100,6 +101,14 @@ export class Queue {
                         message: `Start train ${train.uuid}. Waited for ${train.waitingDuration.as('seconds')} seconds.`,
                     });
 
+                    const trainTransaction = Sentry.startTransaction({
+                        op: 'queue.job_train',
+                        name: train.uuid,
+                        tags: {
+                            container: train.manifest.containerName,
+                        },
+                    });
+
                     while (this._working && train.peak() != null && failed === false) {
                         const job = train.dequeue();
                         try {
@@ -107,15 +116,21 @@ export class Queue {
                                 level: 'debug',
                                 message: `Start job ${job.uuid}. Waited for ${job.waitingDuration.as('seconds')} seconds.`,
                             });
-
+                            const jobTransaction = trainTransaction.startChild({
+                                tags: {
+                                    type: job.type(),
+                                },
+                            });
                             this._jobPromise = job.start(train.manifest);
                             await this._jobPromise;
+                            jobTransaction.finish();
 
                             this._logger.log({
                                 level: 'debug',
                                 message: `Finished job ${job.uuid}. Took  ${job.workingDuration.as('seconds')} seconds.`,
                             });
                         } catch (e) {
+                            Sentry.captureException(e);
                             this._logger.log({
                                 level: 'error',
                                 message: `Error in job ${job.uuid}. Train has been canceled`,
@@ -133,6 +148,7 @@ export class Queue {
                     } else {
                         train.status = EStatus.FINISHED;
                     }
+                    trainTransaction.finish();
                     resolve(null);
                 });
                 await this._trainPromise;

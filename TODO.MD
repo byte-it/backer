@@ -23,6 +23,7 @@
 - [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
 - [x] Static config for containers
 - [ ] Automated docker build
+- [ ] Sentry Integration
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something

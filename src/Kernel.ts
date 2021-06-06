@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import {IConfig} from 'config';
 import * as config from 'config';
 import * as Dockerode from 'dockerode';
@@ -27,43 +28,54 @@ export class Kernel {
             }
         }
 
-        container.registerInstance<IConfig>('Config', config);
-
-        const logger = winston.createLogger({
-            transports: [
-                new winston.transports.Console({
-                    level: config.get<string>('logLevel'),
-                }),
-            ],
-        });
-
-        logger.info('Start backer');
-
-        container.registerInstance<Logger>(
-            'Logger',
-            logger,
+        Sentry.init(
+            {
+                dsn: config.get('sentry.dsn'),
+                tracesSampleRate: 1.0,
+            },
         );
+        try {
+            container.registerInstance<IConfig>('Config', config);
 
-        container.registerInstance<Dockerode>(
-            Dockerode,
-            new Dockerode({socketPath: container.resolve<IConfig>('Config').get('socketPath')}),
-        );
+            const logger = winston.createLogger({
+                transports: [
+                    new winston.transports.Console({
+                        level: config.get<string>('logLevel'),
+                    }),
+                ],
+            });
 
-        const queue = container.resolve(Queue);
+            logger.info('Start backer');
 
-        const targetProvider = container.resolve(BackupTargetProvider);
-        await targetProvider.init();
+            container.registerInstance<Logger>(
+                'Logger',
+                logger,
+            );
 
-        const middlewareProvider = container.resolve(BackupMiddlewareProvider);
-        await middlewareProvider.init();
+            container.registerInstance<Dockerode>(
+                Dockerode,
+                new Dockerode({socketPath: container.resolve<IConfig>('Config').get('socketPath')}),
+            );
 
-        const backupManager = container.resolve(BackupManager);
-        await backupManager.init();
+            container.resolve(Queue);
 
-        const api = container.resolve(API);
+            const targetProvider = container.resolve(BackupTargetProvider);
+            await targetProvider.init();
 
-        await queue.start();
+            const middlewareProvider = container.resolve(BackupMiddlewareProvider);
+            await middlewareProvider.init();
 
+            const backupManager = container.resolve(BackupManager);
+            await backupManager.init();
+
+            container.resolve(API);
+
+            await container.resolve(Queue).start();
+        } catch (e) {
+            // Anything that escalates to here will be considered fatal
+            Sentry.captureException(e);
+            return;
+        }
     }
 
     public async shutdown(signal) {
