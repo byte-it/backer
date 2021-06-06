@@ -2,29 +2,38 @@ import {IConfig} from 'config';
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
+import {DateTime} from 'luxon';
 import {container, inject} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
+import {IJsonable} from '../API/IJsonable';
+import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
 import {BackupSourceFactory} from '../BackupSource/BackupSourceFactory';
-import {IBackupSource} from '../BackupSource/IBackupSource';
+import {IBackupSource, IBackupSourceJSON} from '../BackupSource/IBackupSource';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
-import {IBackupTarget} from '../BackupTarget/IBackupTarget';
+import {IBackupTarget, IBackupTargetJSON} from '../BackupTarget/IBackupTarget';
 import {IBackupManifest} from '../IBackupManifest';
+import {ILabels} from '../Interfaces';
+import {JobTrain} from '../Queue/JobTrain';
+import {MiddlewareJob} from '../Queue/MiddlewareJob';
 import {Queue} from '../Queue/Queue';
+import {RetentionJob} from '../Queue/RetentionJob';
 import {SourceJob} from '../Queue/SourceJob';
 import {TargetJob} from '../Queue/TargetJob';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
-import {JobTrain} from '../Queue/JobTrain';
-import {RetentionJob} from '../Queue/RetentionJob';
-import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
-import {MiddlewareJob} from '../Queue/MiddlewareJob';
-import {DateTime} from 'luxon';
-import {ILabels} from '../Interfaces';
+
+export interface IBackupMandateJSON {
+    id: string;
+    name: string;
+    interval: string;
+    target: IBackupTargetJSON;
+    source: IBackupSourceJSON;
+}
 
 /**
  * The BackupMandate represents the mandate to create and manage backups for 1 container.
  */
-export class BackupMandate {
+export class BackupMandate implements IJsonable {
 
     /**
      * The logger preloaded with meta about the backedup container
@@ -100,7 +109,7 @@ export class BackupMandate {
             retention: Joi.number(),
             namePattern: Joi.string(),
             network: Joi.string().required(),
-            middleware: Joi.string().regex(/^(\w|\d|-|_)+(,( )?(\w|\d|-|_)+)*$/)
+            middleware: Joi.string().regex(/^(\w|\d|-|_)+(,( )?(\w|\d|-|_)+)*$/),
         }).options({
             allowUnknown: true,
         });
@@ -113,7 +122,7 @@ export class BackupMandate {
      */
     public static fromContainer(inspectInfo: ContainerInspectInfo): BackupMandate {
         const containerName = inspectInfo.Name.replace('/', '');
-        let labels = extractLabels(inspectInfo.Config.Labels);
+        const labels = extractLabels(inspectInfo.Config.Labels);
         return this.fromStatic(containerName, labels, inspectInfo);
     }
 
@@ -272,6 +281,7 @@ export class BackupMandate {
     /**
      * @param {IConfig} config
      * @param {winston.Logger} logger
+     * @param {Queue} queue
      * @param {string} containerId
      * @param {string} containerName
      * @param {IBackupSource} source
@@ -279,6 +289,7 @@ export class BackupMandate {
      * @param {string} interval
      * @param {string} retention
      * @param {string} namePattern
+     * @param middlewareStack
      */
     constructor(
         @inject('Config') private config: IConfig,
@@ -297,7 +308,7 @@ export class BackupMandate {
         this._logger = logger.child({
             containerId: this._containerId,
             containerName: this._containerName,
-        })
+        });
 
         this._containerId = containerId;
         this._containerName = containerName;
@@ -310,7 +321,7 @@ export class BackupMandate {
         this._defaultMeta = {
             containerId: this._containerId,
             containerName: this._containerName,
-        }
+        };
 
         if (Array.isArray(middlewareStack)) {
             this._middlewareStack = middlewareStack;
@@ -402,7 +413,7 @@ export class BackupMandate {
      *
      * @todo TEST!
      */
-    public async backup() {
+    public backup(meta?): IBackupManifest {
         const backupName = this.createName();
 
         const backupMeta = {
@@ -412,13 +423,15 @@ export class BackupMandate {
             targetName: this._target.name,
         };
 
-
         const manifest: IBackupManifest = {
             name: backupName,
             containerName: this._containerName,
             sourceName: this._source.name,
             date: DateTime.now().toFormat('yyyyMMdd-HH-mm'),
             steps: [],
+            optional: {
+                ...meta,
+            },
         };
 
         const train = new JobTrain(manifest);
@@ -440,6 +453,17 @@ export class BackupMandate {
             message: `Backup ${backupName} enqueued`,
             ...backupMeta,
         });
+        return manifest;
+    }
+
+    public toJSON(): IBackupMandateJSON {
+        return {
+            id: this.containerId,
+            name: this.containerName,
+            interval: this.interval,
+            target: this.target.toJSON(),
+            source: this.source.toJSON(),
+        };
     }
 
     /**

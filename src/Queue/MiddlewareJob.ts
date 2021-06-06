@@ -3,6 +3,7 @@ import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
 import {IBackupManifest} from '../IBackupManifest';
 import {getLastStep} from '../Util';
 import {AJob} from './AJob';
+import {IQueueableJSON} from './AQueueable';
 
 export class MiddlewareJob extends AJob {
 
@@ -13,10 +14,13 @@ export class MiddlewareJob extends AJob {
         this._middleware = middleware;
     }
 
-    public toJSON(): object {
+    public type(): string {
+        return 'middleware';
+    }
+
+    public toJSON(): IQueueableJSON & { middleware: { name: string; type: string } } {
         return {
             ...super.toJSON(),
-            type: 'middleware',
             middleware: {
                 name: this._middleware.name,
                 type: this._middleware.type,

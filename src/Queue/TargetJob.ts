@@ -1,11 +1,7 @@
-import {IConfig} from 'config';
-import * as Path from 'path';
-import {container} from 'tsyringe';
-import {BackupMandate} from '../Backup/BackupMandate';
-import {IBackupTarget} from '../BackupTarget/IBackupTarget';
-import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
-import {AJob} from './AJob';
+import {IBackupManifest} from '../IBackupManifest';
 import {getLastStep} from '../Util';
+import {AJob} from './AJob';
+import {IQueueableJSON} from './AQueueable';
 
 
 export class TargetJob extends AJob {
@@ -32,10 +28,7 @@ export class TargetJob extends AJob {
         return manifest;
     }
 
-    public toJSON(): object {
-        return {
-            ...super.toJSON(),
-            type: 'target',
-        };
+    public type(): string {
+        return 'target';
     }
 }

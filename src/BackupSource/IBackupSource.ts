@@ -1,7 +1,10 @@
+import {IJsonable} from '../API/IJsonable';
 import {IBackupManifest} from '../IBackupManifest';
 import {IProvideable} from '../IProvideable';
 
-
+export interface IBackupSourceJSON {
+    type: string;
+}
 /**
  * IBackupSource must be implemented by all back sources to instantiated by the {@link BackupSourceProvider}
  *
@@ -11,7 +14,7 @@ import {IProvideable} from '../IProvideable';
  * // In addition all implementations of IBackupSource must have a static factory method:
  * public static fromContainer(inspectInfo: ContainerInspectInfo): IBackupSource {}}
  */
-export interface IBackupSource extends IProvideable {
+export interface IBackupSource extends IProvideable, IJsonable {
 
     /**
      * Returns the ending of the file created by this backup source. (e.g `.sql.tar` or `.dump`)
@@ -27,4 +30,6 @@ export interface IBackupSource extends IProvideable {
      * @param manifest
      */
     backup(manifest: IBackupManifest): Promise<IBackupManifest>;
+
+    toJSON(): IBackupSourceJSON;
 }

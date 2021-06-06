@@ -3,15 +3,24 @@ import ProcessEnv = NodeJS.ProcessEnv;
 import {IConfig} from 'config';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
+import * as md5 from 'md5-file';
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {ILabels} from '../Interfaces';
-import {extractLabels, getConfigFromLabel, getHostForContainer} from '../Util';
+import {getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
-import {IBackupSource} from './IBackupSource';
-import * as md5 from 'md5-file';
+import {IBackupSource, IBackupSourceJSON} from './IBackupSource';
+
+export interface IBackupSourceMysqlJSON extends IBackupSourceJSON {
+    mysql: {
+        database: string | string[],
+        tableIgnoreList?: string | string[],
+        tableIncludeList?: string | string[],
+        options?: object,
+    };
+}
 
 export interface IMysqlLabels extends ILabels {
     mysql: {
@@ -249,7 +258,7 @@ export class BackupSourceMysql implements IBackupSource {
                             processor: 'source.mysql',
                             fileName: tmpFileName,
                             uri: tmpFile,
-                            md5: md5Hash
+                            md5: md5Hash,
                         };
                         manifest.steps.push(step);
                         resolve(manifest);
@@ -330,5 +339,17 @@ export class BackupSourceMysql implements IBackupSource {
      */
     public getFileSuffix(): string {
         return '.sql';
+    }
+
+    public toJSON(): IBackupSourceMysqlJSON {
+        return {
+            type: this.type,
+            mysql: {
+                database: this._db,
+                tableIgnoreList: this._ignoreTablesList,
+                tableIncludeList: this._includeTablesList,
+                options: this._options,
+            },
+        };
     }
 }

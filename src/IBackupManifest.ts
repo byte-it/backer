@@ -1,4 +1,4 @@
-import {ObjectSchema, object, string, array} from 'joi';
+import {array, object, ObjectSchema, string} from 'joi';
 
 export interface IBackupManifestStep {
     /**
@@ -35,7 +35,7 @@ export function getIBackupManifestStepSchema(): ObjectSchema {
         fileName: string().required(),
         uri: string().required(),
         md5: string().required(),
-        optional: object()
+        optional: object(),
     });
 }
 
@@ -96,7 +96,7 @@ export function getIBackupManifestSchema(): ObjectSchema {
         date: string().required(),
         md5: string(),
         path: string(),
-        optional: object()
+        optional: object(),
     });
 }
 

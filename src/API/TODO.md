@@ -4,7 +4,7 @@
     - [x] Get all
     - [x] Get detail
     - [x] Get backups
-    - [ ] Post trigger Backup
+    - [x] Post trigger Backup
 - [x] Targets
     - [x] Get all
     - [x] Get detail

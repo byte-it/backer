@@ -1,15 +1,14 @@
 import {existsSync, lstatSync, PathLike} from 'fs';
+import * as md5 from 'md5-file';
 import * as Path from 'path';
-import {inject, injectable} from 'tsyringe';
+import {inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {getIBackupTargetManifestSchema, IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
-import {IBackupTargetS3Config} from './BackupTargetS3';
-import {FileNotFound} from './Exceptions/FileNotFound';
-import {ManifestNotFound} from './Exceptions/ManifestNotFound';
-import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
-import * as md5 from 'md5-file';
 import {getLastStep} from '../Util';
+import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestInvalid} from './Exceptions/ManifestInvalid';
+import {ManifestNotFound} from './Exceptions/ManifestNotFound';
+import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
 
 /**
  * @category Target
@@ -142,6 +141,8 @@ export abstract class BackupTargetBase implements IBackupTarget {
         this.manifest.backups.splice(index, 1);
         await this.writeManifestToTarget();
     }
+
+    public abstract toJSON(): IBackupTargetJSON;
 
     /**
      * Validates that the target is writeable.

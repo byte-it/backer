@@ -14,6 +14,9 @@ export class BackupMandateController extends BaseController {
         '/mandates/:id': {
             get: this.show,
         },
+        '/mandates/:id/trigger': {
+            post: this.triggerBackup,
+        },
         '/mandates/:id/backups': {
             get: this.backups,
         },
@@ -29,18 +32,12 @@ export class BackupMandateController extends BaseController {
     }
 
     public async index(request: express.Request, response: express.Response): Promise<any> {
-        const backups = [];
+        const mandates = [];
 
-        for (const backup of this.backupManager.getBackups()) {
-            backups.push({
-                id: backup.containerId,
-                name: backup.containerName,
-                interval: backup.interval,
-                target: backup.target.name,
-                type: backup.source.type,
-            });
+        for (const mandate of this.backupManager.getBackups()) {
+            mandates.push(mandate.toJSON());
         }
-        response.status(200).send({data: backups});
+        response.status(200).send({data: mandates});
     }
 
     public async show(request: express.Request, response: express.Response): Promise<any> {
@@ -50,13 +47,7 @@ export class BackupMandateController extends BaseController {
             return;
         }
         response.status(200).send({
-            data: {
-                id: mandate.containerId,
-                name: mandate.containerName,
-                interval: mandate.interval,
-                target: mandate.target.name,
-                type: mandate.source.type,
-            },
+            data: mandate.toJSON(),
         });
 
     }
@@ -73,5 +64,17 @@ export class BackupMandateController extends BaseController {
         });
 
         response.status(200).send({data: backups});
+    }
+
+    public async triggerBackup(request: express.Request, response: express.Response): Promise<any> {
+        const mandate = this.backupManager.getBackup(request.params.id);
+        if (!mandate) {
+            response.status(404).send({message: `Mandate for ${request.params.id} not found.`});
+            return;
+        }
+        const meta = request.body;
+        const manifest = mandate.backup({trigger: 'api', ...meta});
+
+        response.status(200).send({message: 'Backup triggered', data: manifest});
     }
 }

@@ -9,6 +9,19 @@ export interface IQueueTimeStamps {
     finished: DateTime;
 }
 
+export interface IQueueableJSON {
+    uuid: string;
+    status: number;
+    type: string;
+    timestamps: {
+        enqueued: string;
+        started: string;
+        finished: string;
+    };
+    waiting: number;
+    working: number;
+}
+
 export abstract class AQueueable implements IJsonable {
     set status(value: EStatus) {
         if (this._status >= value) {
@@ -87,6 +100,5 @@ export abstract class AQueueable implements IJsonable {
         this._uuid = uuid();
     }
 
-    public abstract toJSON();
-
+    public abstract toJSON(): IQueueableJSON;
 }

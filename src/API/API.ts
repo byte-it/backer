@@ -1,3 +1,4 @@
+import * as bodyParser from 'body-parser';
 import {IConfig} from 'config';
 import * as express from 'express';
 import * as http from 'http';
@@ -35,7 +36,7 @@ export class API {
 
     public constructor(@inject('Config') config: IConfig, @inject('Logger') private _logger: Logger) {
         this._app = express();
-
+        this._app.use(bodyParser.json({}));
         container.registerInstance<express.Application>('Server', this._app);
 
         const apiConfig = config.get<IAPIConfig>('api');

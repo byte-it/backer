@@ -1,7 +1,13 @@
+import {IBackupMandateJSON} from '../Backup/BackupMandate';
 import {IBackupManifest} from '../IBackupManifest';
 import {AJob} from './AJob';
-import {AQueueable} from './AQueueable';
+import {AQueueable, IQueueableJSON} from './AQueueable';
 import {EStatus} from './Queue';
+
+export interface IJobTrainJSON extends IQueueableJSON {
+    manifest: IBackupManifest;
+    jobs: IQueueableJSON[];
+}
 
 /**
  * A job train is a queued list of it self.
@@ -58,15 +64,17 @@ export class JobTrain extends AQueueable {
         return this._jobs[0];
     }
 
-    public toJSON() {
+    public toJSON(): IJobTrainJSON {
         return {
             uuid: this.uuid,
-            mandate: this._manifest,
+            status: this.status,
+            type: 'train',
+            manifest: this._manifest,
             jobs: this._jobs.map((job) => job.toJSON()),
             timestamps: {
-                enqueued: this.timestamps.enqueued?.toUTC(),
-                started: this.timestamps.started?.toUTC(),
-                finished: this.timestamps.finished?.toUTC(),
+                enqueued: this.timestamps.enqueued?.toUTC().toString(),
+                started: this.timestamps.started?.toUTC().toString(),
+                finished: this.timestamps.finished?.toUTC().toString(),
             },
             waiting: this.waitingDuration?.toMillis() / 1000,
             working: this.workingDuration?.toMillis() / 1000,

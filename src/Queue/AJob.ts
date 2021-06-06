@@ -1,6 +1,6 @@
 import {BackupMandate} from '../Backup/BackupMandate';
 import {IBackupManifest} from '../IBackupManifest';
-import {AQueueable} from './AQueueable';
+import {AQueueable, IQueueableJSON} from './AQueueable';
 import {EStatus} from './Queue';
 
 /**
@@ -27,19 +27,21 @@ export abstract class AJob extends AQueueable {
         return manifest;
     }
 
-    public toJSON(): object {
+    public toJSON(): IQueueableJSON {
         return {
             uuid: this.uuid,
             status: this.status,
+            type: this.type(),
             timestamps: {
-                enqueued: this.timestamps.enqueued?.toUTC(),
-                started: this.timestamps.started?.toUTC(),
-                finished: this.timestamps.finished?.toUTC(),
+                enqueued: this.timestamps.enqueued?.toUTC().toString(),
+                started: this.timestamps.started?.toUTC().toString(),
+                finished: this.timestamps.finished?.toUTC().toString(),
             },
             waiting: this.waitingDuration?.toMillis() / 1000,
             working: this.workingDuration?.toMillis() / 1000,
         };
     }
+    public abstract type(): string;
 
     protected abstract execute(manifest: IBackupManifest): Promise<IBackupManifest>;
 }

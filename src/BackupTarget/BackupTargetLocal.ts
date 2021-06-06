@@ -4,11 +4,11 @@ import * as moveFile from 'move-file';
 import * as Path from 'path';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupTargetManifest, IBackupManifest} from '../IBackupManifest';
+import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {BackupTargetBase} from './BackupTargetBase';
-import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
-import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {FileNotWriteable} from './Exceptions/FileNotWriteable';
+import {ManifestNotFound} from './Exceptions/ManifestNotFound';
+import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
 
 /**
  * The configuration of the BackupTargetLocal.
@@ -77,6 +77,16 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
 
         // Remove the training slash
         this._backupDir = String(calculatedPath).replace(/\/+$/, '');
+    }
+
+    public toJSON(): IBackupTargetJSON& { local: { path: string } } {
+        return {
+            name: this.name,
+            type: this.type,
+            local: {
+                path: this._backupDir,
+            },
+        };
     }
 
     /**

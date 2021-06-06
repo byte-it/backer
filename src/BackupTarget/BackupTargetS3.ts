@@ -3,15 +3,14 @@ import S3 = require('aws-sdk/clients/s3');
 import * as fs from 'fs';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
-import {IBackupTargetManifest, IBackupManifest} from '../IBackupManifest';
+import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {BackupTargetBase} from './BackupTargetBase';
 import {IBackupTargetLocalConfig} from './BackupTargetLocal';
 import {FileNotAccessible} from './Exceptions/FileNotAccessible';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
-import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
-import instance from 'tsyringe/dist/typings/dependency-container';
+import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
 
 /**
  *
@@ -37,8 +36,6 @@ export interface IBackupTargetS3Config extends IBackupTargetConfig {
  */
 export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
 
-    protected _type = 's3';
-
     get bucket() {
         return this._bucket;
     }
@@ -46,6 +43,8 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     get s3Client() {
         return this._s3Client;
     }
+
+    protected config: IBackupTargetS3Config;
 
     /**
      * Factory
@@ -62,6 +61,8 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         await target.init();
         return target;
     }
+
+    protected _type = 's3';
 
     /**
      * The S3 instance used for all operations
@@ -201,17 +202,15 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         }
 
         let manifestString;
-        if(typeof body === 'object'){
+        if (typeof body === 'object') {
             manifestString = body.toString('utf8');
-        }
-        else{
+        } else {
             manifestString = body;
         }
 
-        try{
+        try {
             return JSON.parse(body) as IBackupTargetManifest;
-        }
-        catch (e) {
+        } catch (e) {
             throw new ManifestNotFound();
         }
     }
@@ -230,6 +229,17 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         } catch (e) {
             this.handleAWSError(e);
         }
+    }
+
+    public toJSON(): IBackupTargetJSON & {s3: {bucket: string, endpoint: string}} {
+        return {
+            name: this.name,
+            type: this.type,
+            s3: {
+                bucket: this.bucket,
+                endpoint: this.config.s3Client.endpoint.toString(),
+            },
+        };
     }
 
     /**

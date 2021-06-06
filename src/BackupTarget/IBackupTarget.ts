@@ -3,6 +3,7 @@
  * It acts as filesystem abstraction layer to the {@link Backup} by providing
  * the needed methods for adding, listing and removing backups.
  */
+import {IJsonable} from '../API/IJsonable';
 import {IBackupTargetManifest} from '../IBackupManifest';
 import {IBackupManifest} from '../IBackupManifest';
 import {IProvideable} from '../IProvideable';
@@ -29,12 +30,17 @@ export interface IBackupTargetConfig {
     default?: boolean;
 }
 
+export interface IBackupTargetJSON {
+    name: string;
+    type: string;
+}
+
 /**
  *  BackupTarget
  *
  * @category BackupTarget
  */
-export interface IBackupTarget extends IProvideable{
+export interface IBackupTarget extends IProvideable, IJsonable {
 
     /**
      * Initializes the target. The constructor only assigns the config. This allows the init method to perform async
@@ -72,4 +78,6 @@ export interface IBackupTarget extends IProvideable{
      * @return {IBackupTargetManifest} The backup manifest managed by this target.
      */
     getManifest(): IBackupTargetManifest;
+
+    toJSON(): IBackupTargetJSON;
 }

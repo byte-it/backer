@@ -3,11 +3,8 @@ import {AJob} from './AJob';
 
 export class RetentionJob extends AJob {
 
-    public toJSON(): object {
-        return {
-            ...super.toJSON(),
-            type: 'retention',
-        };
+    public type(): string {
+        return 'retention';
     }
 
     /**
