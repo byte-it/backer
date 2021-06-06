@@ -1,0 +1,53 @@
+{
+  "name": "cli",
+  "version": "0.0.0",
+  "author": "johanneskees",
+  "bin": {
+    "backer": "./bin/run"
+  },
+  "bugs": "https://github.com/docker-db-backup/cli/issues",
+  "dependencies": {
+    "@oclif/command": "^1.8.0",
+    "@oclif/config": "^1.17.0",
+    "@oclif/plugin-help": "^3.2.2",
+    "@sentry/node": "^6.5.1",
+    "@sentry/tracing": "^6.5.1",
+    "@sentry/types": "^6.5.1",
+    "body-parser": "^1.19.0",
+    "cli-ux": "^5.5.1",
+    "tslib": "^1.14.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.2.4"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/lib",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "homepage": "https://github.com/docker-db-backup/cli",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "oclif": {
+    "commands": "./lib/commands",
+    "bin": "backer",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "docker-db-backup/cli",
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif-dev readme && git add README.md"
+  },
+  "types": "lib/index.d.ts"
+}

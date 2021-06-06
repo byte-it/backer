@@ -12,3 +12,5 @@ targets:
   default: true
 middlewares: []
 mandates: {}
+sentry:
+  dsn:

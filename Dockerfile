@@ -5,6 +5,9 @@ RUN apt-get update \
 
 RUN mkdir -p /var/tmp/backer && mkdir -p /var/opt/backer/local
 
+RUN echo '#!/bin/bash\n/usr/app/cli/bin/run $@' > /usr/bin/backer && \
+    chmod +x /usr/bin/backer
+
 WORKDIR /usr/app
 
 COPY package*.json ./
