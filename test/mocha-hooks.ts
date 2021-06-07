@@ -2,6 +2,7 @@
  * @file Provide global setup for all tests.
  */
 
+import * as Sentry from '@sentry/node';
 import * as config from 'config';
 import {container} from 'tsyringe';
 import {createLogger, Logger, transports} from 'winston';
@@ -22,6 +23,9 @@ export const mochaHooks = {
         }));
 
         container.registerInstance('Config', config);
+        Sentry.init({
+            environment: 'testing'
+        });
     },
 
     /**

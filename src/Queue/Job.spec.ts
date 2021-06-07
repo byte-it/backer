@@ -7,6 +7,10 @@ import {EStatus} from './Queue';
 use(chaiAsPromised);
 
 export class TestJob extends AJob {
+    public type(): string {
+        return 'test';
+    }
+
     protected execute(manifest: IBackupManifest): Promise<IBackupManifest> {
         return Promise.resolve(undefined);
     }
@@ -18,6 +22,10 @@ describe('AJob', () => {
         it('should set the started status', () => {
             // tslint:disable-next-line:max-classes-per-file
             const job = new class NotFinishingTestJob extends AJob {
+                public type(): string {
+                    return 'test';
+                }
+
                 protected execute(manifest: IBackupManifest): Promise<IBackupManifest> {
                     return new Promise((resolve, reject) => {
                     });
@@ -33,14 +41,14 @@ describe('AJob', () => {
 
         it('should set the finished status', async () => {
             // tslint:disable-next-line:max-classes-per-file
-            const job = new class NotFinishingTestJob extends AJob {
+            const job = new class NotFinishingTestJob extends TestJob {
                 protected execute(manifest: IBackupManifest): Promise<IBackupManifest> {
                     return Promise.resolve(null);
                 }
 
                 // @ts-ignore
             }({});
-
+            job.status = EStatus.ENQUEUED;
             // @ts-ignore
             await job.start({});
             expect(job.status).to.equal(EStatus.FINISHED);
@@ -48,7 +56,7 @@ describe('AJob', () => {
 
         it('should set the failed status', async () => {
             // tslint:disable-next-line:max-classes-per-file
-            const job = new class NotFinishingTestJob extends AJob {
+            const job = new class NotFinishingTestJob extends TestJob {
                 protected execute(manifest: IBackupManifest): Promise<IBackupManifest> {
                     return Promise.reject(null);
                 }

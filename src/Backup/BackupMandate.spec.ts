@@ -9,6 +9,9 @@ import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
 import {BackupMandate} from './BackupMandate';
 import {DateTime} from 'luxon';
 import {Queue} from '../Queue/Queue';
+import {IBackupManifest} from '../IBackupManifest';
+import {IBackupTargetJSON} from '../BackupTarget/IBackupTarget';
+import {IBackupSourceJSON} from '../BackupSource/IBackupSource';
 
 beforeEach(async () => {
     mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
@@ -163,7 +166,7 @@ describe('BackupMandate', () => {
             expect(() => BackupMandate.fromContainer(testContainer)).to.throw(Error);
         });
     });
-    describe('#createName()',  () => {
+    describe('#createName()', () => {
         it('should replace DATE and CONTAINER_NAME correctly', async () => {
             const containerId = 'TheContainerId';
             const containerName = 'TheContainerName';
@@ -178,10 +181,26 @@ describe('BackupMandate', () => {
                 containerName,
                 // @ts-ignore
                 {
+                    name: '',
+                    type: '',
+                    backup(manifest: IBackupManifest): Promise<IBackupManifest> {
+                        return Promise.resolve(undefined);
+                    },
                     getFileSuffix() {
                         return '.sql';
                     },
-                }, null, '0 0 * * *', '0', pattern);
+                    toJSON(): IBackupSourceJSON {
+                        // @ts-ignore
+                        return {};
+                    },
+                },
+                // @ts-ignore
+                {
+                    toJSON(): IBackupTargetJSON {
+                        // @ts-ignore
+                        return {}
+                    }
+                }, '0 0 * * *', '0', pattern);
             const expectedName = `${date.toFormat('yyyyMMdd-HH-mm')}-${containerName}`;
             expect(backup.createName(date)).to.equal(expectedName);
 
@@ -203,10 +222,29 @@ describe('BackupMandate', () => {
                 containerName,
                 // @ts-ignore
                 {
+                    name: '',
+                    type: '',
+                    backup(manifest: IBackupManifest): Promise<IBackupManifest> {
+                        return Promise.resolve(undefined);
+                    },
                     getFileSuffix() {
                         return '.sql';
                     },
-                }, null, '0 0 * * *', 2, pattern);
+                    toJSON(): IBackupSourceJSON {
+                        // @ts-ignore
+                        return {};
+                    },
+                },
+                // @ts-ignore
+                {
+                    toJSON(): IBackupTargetJSON {
+                        // @ts-ignore
+                        return {}
+                    }
+                },
+                '0 0 * * *',
+                2,
+                pattern);
 
             return backup;
         };
