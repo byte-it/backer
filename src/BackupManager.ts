@@ -5,6 +5,7 @@ import {Logger} from 'winston';
 import {BackupMandate} from './Backup/BackupMandate';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {IDockerContainerEvent, IDockerEvent, ILabels} from './Interfaces';
+import {addBreadcrumb, captureException, getCurrentHub, Hub, withScope} from '@sentry/node';
 
 /**
  * BackupManager is responsible for the bookkeeping of all active backup mandates.
@@ -44,24 +45,40 @@ export class BackupManager {
     public async createBackup(containerId: string): Promise<BackupMandate> {
         const inspect = await this.docker.getContainer(containerId).inspect();
         const containerName = inspect.Name.replace('/', '');
+
+        const hub = new Hub(getCurrentHub().getClient(), getCurrentHub().getScope());
+        hub.pushScope();
+
+        hub.setTags({
+            container_name: containerName,
+            container_id: containerId,
+        });
+
         if (!!inspect.Config.Labels['backer.enabled'] === true) {
             try {
-                const backup = BackupMandate.fromContainer(inspect);
+                hub.setTag('config_from', 'container');
+
+                const backup = BackupMandate.fromContainer(inspect, hub);
                 this.addBackup(backup);
                 return Promise.resolve<BackupMandate>(backup);
             } catch (error) {
+                hub.captureException(error);
                 this.logger.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
                 return Promise.reject(error.message);
             }
         } else if (typeof this._staticMandateConfigs[containerName] !== 'undefined') {
             try {
+                hub.getScope().setTag('config_from', 'static');
                 const backup = BackupMandate.fromStatic(
                     containerName,
                     this._staticMandateConfigs[containerName].labels,
-                    inspect);
+                    inspect,
+                    hub,
+                );
                 this.addBackup(backup);
                 return Promise.resolve<BackupMandate>(backup);
             } catch (error) {
+                hub.captureException(error);
                 this.logger.error(`Container ${inspect.Name}: Failed to create backup. Reason ${error.message}`);
                 return Promise.reject(error.message);
             }
@@ -129,17 +146,25 @@ export class BackupManager {
      * docker event stream for started/stopped containers
      */
     public async init(): Promise<void> {
+        addBreadcrumb({
+            message: 'Init BackupManager',
+            category: 'backupmanger',
+        });
+
         this.logger.info('Read already started container');
         const containers = await this.docker.listContainers();
         for (const container of containers) {
+            getCurrentHub().pushScope();
             this.logger.debug(`Found ${container.Id}`);
-            this.createBackup(container.Id).catch((e) => {
+            await this.createBackup(container.Id).catch((e) => {
                 this.logger.log({
                     level: 'debug',
                     message: e,
                 });
             });
+            getCurrentHub().popScope();
         }
+
 
         this.logger.info('Start monitoring docker events');
         this.docker.getEvents({}, (err, data) => {
@@ -147,22 +172,25 @@ export class BackupManager {
                 this.logger.error(err);
             } else {
                 data.on('data', (buffer: Buffer) => {
-                    let event: IDockerEvent = JSON.parse(buffer.toString('utf-8'));
-                    if (event.Type === 'container') {
-                        event = event as IDockerContainerEvent;
-                        if (event.Action === 'start') {
-                            this.createBackup(event.Actor.ID).catch((e) => {
-                                this.logger.log({
-                                    level: 'debug',
-                                    message: e,
+                    withScope(async () => {
+                        let event: IDockerEvent = JSON.parse(buffer.toString('utf-8'));
+                        if (event.Type === 'container') {
+                            event = event as IDockerContainerEvent;
+                            if (event.Action === 'start') {
+                                this.createBackup(event.Actor.ID).catch((e) => {
+                                    this.logger.log({
+                                        level: 'debug',
+                                        message: e,
+                                    });
                                 });
-                            });
-                        } else if (event.Action === 'stop') {
-                            this.stopBackup(event.Actor.ID);
+                            } else if (event.Action === 'stop') {
+                                this.stopBackup(event.Actor.ID);
+                            }
                         }
-                    }
+                    });
                 });
             }
         });
     }
+
 }

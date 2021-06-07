@@ -1,6 +1,8 @@
+import {getCurrentHub, Hub} from '@sentry/node';
 import {DateTime, Duration} from 'luxon';
 import {v1 as uuid} from 'uuid';
 import {IJsonable} from '../API/IJsonable';
+import {IHasHub} from '../IHasHub';
 import {EStatus} from './Queue';
 
 export interface IQueueTimeStamps {
@@ -22,7 +24,7 @@ export interface IQueueableJSON {
     working: number;
 }
 
-export abstract class AQueueable implements IJsonable {
+export abstract class AQueueable implements IJsonable, IHasHub {
     set status(value: EStatus) {
         if (this._status >= value) {
             return;
@@ -30,11 +32,23 @@ export abstract class AQueueable implements IJsonable {
         switch (value) {
             case EStatus.ENQUEUED:
                 this._timestamps.enqueued = DateTime.now();
+                this.getHub().getScope().addBreadcrumb({
+                    message: `Enqueued ${this.uuid} ${this.toJSON().type}`,
+                    category: 'queue',
+                });
                 break;
             case EStatus.STARTED:
                 this._timestamps.started = DateTime.now();
+                this.getHub().getScope().addBreadcrumb({
+                    message: `Started ${this.uuid} ${this.toJSON().type}`,
+                    category: 'queue',
+                });
                 break;
             case EStatus.FINISHED:
+                this.getHub().getScope().addBreadcrumb({
+                    message: `Finished ${this.uuid} ${this.toJSON().type}`,
+                    category: 'queue',
+                });
             case EStatus.FAILED:
                 this._timestamps.finished = DateTime.now();
                 break;
@@ -96,9 +110,21 @@ export abstract class AQueueable implements IJsonable {
         finished: null,
     };
 
-    protected constructor() {
+    private _hub: Hub;
+
+    protected constructor(hub?: Hub) {
         this._uuid = uuid();
+
+        this._hub = typeof hub  !== 'undefined' ? hub : getCurrentHub();
     }
 
     public abstract toJSON(): IQueueableJSON;
+
+    public getHub(): Hub {
+        return typeof this._hub  !== 'undefined' ? this._hub : getCurrentHub();
+    }
+
+    public setHub(hub: Hub): void {
+        this._hub = hub;
+    }
 }

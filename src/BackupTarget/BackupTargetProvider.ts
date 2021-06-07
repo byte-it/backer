@@ -6,7 +6,7 @@ import {BackupTargetLocal, IBackupTargetLocalConfig} from './BackupTargetLocal';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
 import {IBackupTarget, IBackupTargetConfig} from './IBackupTarget';
 import {IProvider} from '../IProvider';
-
+import {addBreadcrumb, captureException, captureMessage, getCurrentHub, Severity, withScope} from '@sentry/node';
 /**
  * The BackupTargetProvider manages all available and configured BackupTargets.
  * BackupTargets need to be statically configured, as they may contain sensitive credentials or are reused by multiple
@@ -32,6 +32,7 @@ export class BackupTargetProvider implements IProvider {
     public async init() {
         for (const target of this.config.get('targets') as IBackupTargetConfig[]) {
             try {
+                getCurrentHub().pushScope();
                 let instance: IBackupTarget;
                 switch (target.type) {
                     case 'local':
@@ -43,6 +44,7 @@ export class BackupTargetProvider implements IProvider {
                     default:
                         throw new Error(`Target ${target.type} not found.`);
                 }
+                getCurrentHub().popScope();
                 const instanceName = ['target', target.name].join('.');
 
                 container.registerInstance(instanceName, instance);
@@ -54,7 +56,12 @@ export class BackupTargetProvider implements IProvider {
                     level: 'info',
                     message: `Registered ${instanceName}. ${target.default ? 'Used as default.' : ''}`,
                 });
+                addBreadcrumb({
+                    message: `Registered ${instanceName}. ${target.default ? 'Used as default.' : ''}`,
+                    category: 'target',
+                });
             } catch (e) {
+                captureException(e);
                 this.logger.log({
                     level: 'error',
                     message: `Failed to instantiate target ${target.name}`,
@@ -62,6 +69,7 @@ export class BackupTargetProvider implements IProvider {
                 });
             }
         }
+        return;
     }
 
     /**

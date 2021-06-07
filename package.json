@@ -1,6 +1,6 @@
 {
   "name": "backer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": " A tool to backup multiple databases hosted in docker container to s3/minio",
   "repository": "git@github.com:byte-it/backer.git",
   "readme": "README.md",
@@ -36,6 +36,7 @@
     "tsyringe": "^4.5.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
+    "winston-transport-sentry-node": "^1.0.2",
     "yaml": "^1.10.2"
   },
   "devDependencies": {

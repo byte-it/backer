@@ -3,6 +3,7 @@ import {IBackupManifest} from '../IBackupManifest';
 import {AJob} from './AJob';
 import {AQueueable, IQueueableJSON} from './AQueueable';
 import {EStatus} from './Queue';
+import {getCurrentHub, Hub} from '@sentry/node';
 
 export interface IJobTrainJSON extends IQueueableJSON {
     manifest: IBackupManifest;
@@ -42,8 +43,8 @@ export class JobTrain extends AQueueable {
      */
     private readonly _manifest: IBackupManifest;
 
-    constructor(manifest: IBackupManifest, jobs?: AJob[]) {
-        super();
+    constructor(manifest: IBackupManifest, jobs?: AJob[], hub?: Hub) {
+        super(hub);
         this._manifest = manifest;
         if (Array.isArray(jobs)) {
             this._jobs = jobs;
@@ -53,6 +54,7 @@ export class JobTrain extends AQueueable {
     }
 
     public enqueue(job: AJob): void {
+        job.setHub(this.getHub());
         this._jobs.push(job);
     }
 

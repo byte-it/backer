@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+import {SpanStatus} from '@sentry/tracing';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
 import {JobTrain} from './JobTrain';
@@ -92,7 +92,7 @@ export class Queue {
 
                 const train = this._trains.shift();
                 this._trainPromise = new Promise(async (resolve, reject) => {
-
+                    train.getHub().pushScope();
                     train.status = EStatus.STARTED;
                     let failed = false;
 
@@ -101,9 +101,9 @@ export class Queue {
                         message: `Start train ${train.uuid}. Waited for ${train.waitingDuration.as('seconds')} seconds.`,
                     });
 
-                    const trainTransaction = Sentry.startTransaction({
-                        op: 'queue.job_train',
-                        name: train.uuid,
+                    const trainTransaction = train.getHub().startTransaction({
+                        name: 'queue.job_train',
+                        op: 'queue.work.train',
                         tags: {
                             container: train.manifest.containerName,
                         },
@@ -111,36 +111,39 @@ export class Queue {
 
                     while (this._working && train.peak() != null && failed === false) {
                         const job = train.dequeue();
+                        train.getHub().setTag('job_type', job.type());
+                        const jobTransaction = trainTransaction.startChild({
+                            op: 'queue.work.job',
+                            data: job.toJSON(),
+                        });
                         try {
                             this._logger.log({
                                 level: 'debug',
                                 message: `Start job ${job.uuid}. Waited for ${job.waitingDuration.as('seconds')} seconds.`,
                             });
-                            const jobTransaction = trainTransaction.startChild({
-                                tags: {
-                                    type: job.type(),
-                                },
-                            });
                             this._jobPromise = job.start(train.manifest);
                             await this._jobPromise;
-                            jobTransaction.finish();
-
+                            jobTransaction.setStatus(SpanStatus.Ok);
                             this._logger.log({
                                 level: 'debug',
                                 message: `Finished job ${job.uuid}. Took  ${job.workingDuration.as('seconds')} seconds.`,
                             });
                         } catch (e) {
-                            Sentry.captureException(e);
+                            jobTransaction.setStatus(SpanStatus.InternalError);
+                            trainTransaction.setStatus(SpanStatus.InternalError);
+                            const eventId = train.getHub().captureException(e);
                             this._logger.log({
                                 level: 'error',
                                 message: `Error in job ${job.uuid}. Train has been canceled`,
                                 error: e.toString(),
                                 containerName: train.manifest.containerName,
+                                eventId,
                             });
                             failed = true;
                             job.status = EStatus.FAILED;
                             train.status = EStatus.FAILED;
                         }
+                        jobTransaction.finish();
                     }
                     // Put the train back in queue if queue is stopped
                     if (!this._working && train.peak() != null) {
@@ -148,9 +151,12 @@ export class Queue {
                     } else {
                         train.status = EStatus.FINISHED;
                     }
+                    trainTransaction.setStatus(SpanStatus.Ok);
                     trainTransaction.finish();
+                    train.getHub().popScope();
                     resolve(null);
                 });
+
                 await this._trainPromise;
 
                 // Track the stats

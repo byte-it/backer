@@ -1,8 +1,11 @@
+import * as Sentry from '@sentry/node';
+import {getCurrentHub, Hub} from '@sentry/node';
+import {Scope} from '@sentry/types';
 import {IConfig} from 'config';
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
-import {DateTime} from 'luxon';
+import {DateTime, Settings} from 'luxon';
 import {container, inject} from 'tsyringe';
 import {LogEntry, Logger} from 'winston';
 import {IJsonable} from '../API/IJsonable';
@@ -118,15 +121,21 @@ export class BackupMandate implements IJsonable {
     /**
      * Factory to create a Backup from {@link Dockerode.ContainerInspectInfo}
      * @param {Dockerode.ContainerInspectInfo} inspectInfo
+     * @param hub
      * @return {BackupMandate}
      */
-    public static fromContainer(inspectInfo: ContainerInspectInfo): BackupMandate {
+    public static fromContainer(inspectInfo: ContainerInspectInfo, hub?: Hub): BackupMandate {
         const containerName = inspectInfo.Name.replace('/', '');
         const labels = extractLabels(inspectInfo.Config.Labels);
-        return this.fromStatic(containerName, labels, inspectInfo);
+        return this.fromStatic(containerName, labels, inspectInfo, hub);
     }
 
-    public static fromStatic(containerName: string, labels: ILabels, inspectInfo: ContainerInspectInfo): BackupMandate {
+    public static fromStatic(
+        containerName: string,
+        labels: ILabels,
+        inspectInfo: ContainerInspectInfo,
+        hub?: Hub
+    ): BackupMandate {
 
         const logger: Logger = container.resolve<Logger>('Logger');
 
@@ -223,9 +232,10 @@ export class BackupMandate implements IJsonable {
             source,
             target,
             labels.interval,
-            parseInt(labels.retention),
+            parseInt(labels.retention, 10),
             labels.namePattern,
             middlewareStack,
+            hub,
         );
     }
 
@@ -276,6 +286,8 @@ export class BackupMandate implements IJsonable {
 
     private _logger: Logger;
 
+    private _hub: Hub;
+
     private readonly _defaultMeta: object;
 
     /**
@@ -290,6 +302,7 @@ export class BackupMandate implements IJsonable {
      * @param {string} retention
      * @param {string} namePattern
      * @param middlewareStack
+     * @param hub
      */
     constructor(
         @inject('Config') private config: IConfig,
@@ -303,6 +316,7 @@ export class BackupMandate implements IJsonable {
         retention: number,
         namePattern: string,
         middlewareStack?: IBackupMiddleware[],
+        hub?: Hub,
     ) {
 
         this._logger = logger.child({
@@ -323,9 +337,17 @@ export class BackupMandate implements IJsonable {
             containerName: this._containerName,
         };
 
+        this._hub = hub ? hub : getCurrentHub();
+
         if (Array.isArray(middlewareStack)) {
             this._middlewareStack = middlewareStack;
         }
+
+        this._hub.addBreadcrumb({
+            message: `Created BackupMandate`,
+            category: 'mandate',
+            data: this.toJSON(),
+        });
 
         this._cron = new CronJob(this._interval, this.backup.bind(this));
         this._cron.start();
@@ -433,8 +455,11 @@ export class BackupMandate implements IJsonable {
                 ...meta,
             },
         };
+        // Create a new Hub and push a scope to encapsulate the following breadcrumbs created on the train
+        const trainHub = new Hub(this._hub.getClient(), this._hub.getScope());
+        trainHub.pushScope();
 
-        const train = new JobTrain(manifest);
+        const train = new JobTrain(manifest, [], trainHub);
         train.enqueue(new SourceJob(this));
 
         if (this._middlewareStack.length > 0) {

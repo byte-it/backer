@@ -28,13 +28,28 @@ export class Kernel {
             }
         }
 
+        // @todo Load correct version from package
+        // @todo Allow `serverName` in config
         Sentry.init(
             {
                 dsn: config.get('sentry.dsn'),
                 tracesSampleRate: 1.0,
+                release: '0.0.2',
+                environment: process.env.NODE_ENV,
             },
         );
+        Sentry.setContext('node', {
+            version: process.version,
+        });
+
         try {
+
+            Sentry.addBreadcrumb({
+                type: 'info',
+                message: 'Start Bootstrap',
+                category: 'kernel',
+            });
+
             container.registerInstance<IConfig>('Config', config);
 
             const logger = winston.createLogger({
@@ -69,7 +84,11 @@ export class Kernel {
             await backupManager.init();
 
             container.resolve(API);
-
+            Sentry.addBreadcrumb({
+                type: 'info',
+                message: 'Bootstrap finished',
+                category: 'kernel',
+            });
             await container.resolve(Queue).start();
         } catch (e) {
             // Anything that escalates to here will be considered fatal
@@ -79,6 +98,11 @@ export class Kernel {
     }
 
     public async shutdown(signal) {
+        Sentry.addBreadcrumb({
+            type: 'info',
+            message: `Shutting down. Signal: ${signal}`,
+            category: 'kernel',
+        });
         container.resolve<Logger>('Logger').info(`Shutting down. Signal: ${signal}`);
         container.resolve<BackupManager>(BackupManager).stopBackups();
         await Promise.all([
