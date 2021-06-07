@@ -84,7 +84,7 @@ export class BackupSourceMysql implements IBackupSource {
             throw new Error(`Container ${containerName}: No mysql user found!`);
         }
 
-        const mysqlPassword = getConfigFromLabel(labels.mysql.user, inspectInfo);
+        const mysqlPassword = getConfigFromLabel(labels.mysql.password, inspectInfo);
         const db = getConfigFromLabel(labels.mysql.database, inspectInfo);
 
         const options: object = {};
