@@ -5,11 +5,13 @@ import * as Dockerode from 'dockerode';
 import {container} from 'tsyringe';
 import * as winston from 'winston';
 import {Logger} from 'winston';
+import * as npmPackage from '../package.json';
 import {API} from './API/API';
 import {BackupManager} from './BackupManager';
 import {BackupMiddlewareProvider} from './BackupMiddleware/BackupMiddlewareProvider';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {Queue} from './Queue/Queue';
+import {NodeOptions} from '@sentry/node';
 
 export class Kernel {
     public async bootstrap() {
@@ -28,13 +30,10 @@ export class Kernel {
             }
         }
 
-        // @todo Load correct version from package
-        // @todo Allow `serverName` in config
         Sentry.init(
             {
-                dsn: config.get('sentry.dsn'),
-                tracesSampleRate: 1.0,
-                release: '0.0.2',
+                ...config.get<NodeOptions>('sentry'),
+                release: npmPackage.version,
                 environment: process.env.NODE_ENV,
             },
         );

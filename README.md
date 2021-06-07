@@ -107,6 +107,16 @@ mandates:
       middleware: 'compression,encryption'
 ```
 
+#### Sentry
+[Sentry Init Options](https://docs.sentry.io/platforms/node/configuration/options/)
+
+```yaml
+sentry:
+  dsn: <SENTRY_DSN>
+  serverName: <SERVER_NAME>
+```
+
+
 ### Dynamic
 The advantage of Backer is the dynamic configuration via docker labels. This behaviour is heavily inspired by Traefik.
 A container that needs a database backup just needs to be created with some labels, then Backer picks it up and does

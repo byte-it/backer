@@ -14,3 +14,5 @@ middlewares: []
 mandates: {}
 sentry:
   dsn:
+  serverName:
+  tracesSampleRate: 1.0
