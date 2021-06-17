@@ -1,17 +1,18 @@
 import * as Sentry from '@sentry/node';
+import {NodeOptions} from '@sentry/node';
 import {IConfig} from 'config';
 import * as config from 'config';
 import * as Dockerode from 'dockerode';
+import * as fs from 'fs';
+import * as Path from 'path';
 import {container} from 'tsyringe';
 import * as winston from 'winston';
 import {Logger} from 'winston';
-import * as npmPackage from '../package.json';
 import {API} from './API/API';
 import {BackupManager} from './BackupManager';
 import {BackupMiddlewareProvider} from './BackupMiddleware/BackupMiddlewareProvider';
 import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {Queue} from './Queue/Queue';
-import {NodeOptions} from '@sentry/node';
 
 export class Kernel {
     public async bootstrap() {
@@ -29,6 +30,8 @@ export class Kernel {
                 });
             }
         }
+
+        const npmPackage = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '/package.json'), {encoding: 'utf-8'}));
 
         Sentry.init(
             {
