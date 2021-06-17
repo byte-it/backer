@@ -16,8 +16,8 @@ export class SourceJob extends AJob {
             level: 'debug',
             message: `Start source '${this._mandate.source.name}'`,
         });
-
-        await this._mandate.source.backup(manifest);
+        
+        await this._mandate.source.backup(manifest, this._tmp);
 
         this._mandate.logger.log({
             level: 'debug',

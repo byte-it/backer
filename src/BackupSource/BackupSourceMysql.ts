@@ -1,6 +1,5 @@
 import {exec, ExecException} from 'child_process';
 import ProcessEnv = NodeJS.ProcessEnv;
-import {IConfig} from 'config';
 import {ContainerInspectInfo} from 'dockerode';
 import {promises as fs} from 'fs';
 import * as Joi from 'joi';
@@ -10,6 +9,7 @@ import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {ILabels} from '../Interfaces';
+import {TmpStorage} from '../TmpStorage';
 import {getConfigFromLabel, getHostForContainer} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource, IBackupSourceJSON} from './IBackupSource';
@@ -244,8 +244,9 @@ export class BackupSourceMysql implements IBackupSource {
     /**
      * {@inheritDoc}
      */
-    public async backup(manifest: IBackupManifest): Promise<IBackupManifest> {
-        const {cmd, env, tmpFile, tmpFileName} = this.createDumpCmd(manifest.name);
+    public async backup(manifest: IBackupManifest, tmp: TmpStorage): Promise<IBackupManifest> {
+        const tmpPath = await tmp.getPath();
+        const {cmd, env, tmpFile, tmpFileName} = this.createDumpCmd(manifest.name, tmpPath);
         return new Promise<IBackupManifest>((resolve, reject) => {
             exec(
                 cmd,
@@ -277,8 +278,10 @@ export class BackupSourceMysql implements IBackupSource {
      * The secrets user and password will be injected via the process env to prevent them from being leaked via logs.
      *
      * @param name {string} The name of the backup file to be created.
+     * @param tmpPath
      */
-    public createDumpCmd(name: string): { cmd: string, env: ProcessEnv, tmpFile: string, tmpFileName: string } {
+    public createDumpCmd(name: string, tmpPath: string):
+        { cmd: string, env: ProcessEnv, tmpFile: string, tmpFileName: string } {
         const env = {
             DB_USER: this._dbUser,
             DB_PASSWORD: this._dbPassword,
@@ -321,11 +324,8 @@ export class BackupSourceMysql implements IBackupSource {
                 }
             }
         }
-        const tmpPath = container.resolve<IConfig>('Config').get('tmpPath') as string;
         const tmpFileName = `${name}${this.getFileSuffix()}`;
-        const tmpFile = Path.isAbsolute(tmpPath) ?
-            Path.join(tmpPath, tmpFileName) :
-            Path.join(process.cwd(), tmpPath, tmpFileName);
+        const tmpFile = Path.join(tmpPath, tmpFileName);
 
         cmd += ` > ${tmpFile}`;
 

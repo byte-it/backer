@@ -4,6 +4,7 @@ import * as md5 from 'md5-file';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {getLastStep} from '../Util';
 import {IBackupMiddleware} from './IBackupMiddleware';
+import {TmpStorage} from '../TmpStorage';
 
 /**
  * Compresses the backup with gzip.
@@ -33,8 +34,9 @@ export class GzipMiddleware implements IBackupMiddleware {
     /**
      *
      * @param manifest
+     * @param tmp
      */
-    public async execute(manifest: IBackupManifest): Promise<any> {
+    public async execute(manifest: IBackupManifest, tmp: TmpStorage): Promise<any> {
         const cmd = this.buildCommand(manifest);
         const {uri, fileName} = getLastStep(manifest);
 

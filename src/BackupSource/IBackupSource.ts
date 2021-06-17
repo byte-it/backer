@@ -1,6 +1,7 @@
 import {IJsonable} from '../API/IJsonable';
 import {IBackupManifest} from '../IBackupManifest';
 import {IProvideable} from '../IProvideable';
+import {TmpStorage} from '../TmpStorage';
 
 export interface IBackupSourceJSON {
     type: string;
@@ -28,8 +29,9 @@ export interface IBackupSource extends IProvideable, IJsonable {
      *
      * @async
      * @param manifest
+     * @param tmp
      */
-    backup(manifest: IBackupManifest): Promise<IBackupManifest>;
+    backup(manifest: IBackupManifest, tmp: TmpStorage): Promise<IBackupManifest>;
 
     toJSON(): IBackupSourceJSON;
 }

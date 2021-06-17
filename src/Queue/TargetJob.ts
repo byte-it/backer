@@ -1,7 +1,6 @@
 import {IBackupManifest} from '../IBackupManifest';
 import {getLastStep} from '../Util';
 import {AJob} from './AJob';
-import {IQueueableJSON} from './AQueueable';
 
 
 export class TargetJob extends AJob {
@@ -18,6 +17,9 @@ export class TargetJob extends AJob {
         });
 
         await this._mandate.target.addBackup(manifest);
+
+        // After transferring to the target, cleanup
+        await this._tmp.clean();
 
         this._mandate.logger.log({
             level: 'debug',

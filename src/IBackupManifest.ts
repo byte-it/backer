@@ -40,6 +40,7 @@ export function getIBackupManifestStepSchema(): ObjectSchema {
         fileName: string().required(),
         uri: string().required(),
         md5: string().required(),
+        filesize: string(),
         optional: object(),
     });
 }
@@ -49,7 +50,11 @@ export function getIBackupManifestStepSchema(): ObjectSchema {
  * @category BackupTarget
  */
 export interface IBackupManifest {
-
+    /**
+     * Unique id for this manifest
+     */
+    uuid: string;
+    
     /**
      * The name of the backup it self defined by the used name pattern. The name excludes the file suffix.
      */
@@ -106,6 +111,7 @@ export function getIBackupManifestSchema(): ObjectSchema {
         date: string().required(),
         md5: string(),
         path: string(),
+        filesize: string(),
         optional: object(),
     });
 }

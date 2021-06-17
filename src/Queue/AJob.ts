@@ -1,5 +1,6 @@
 import {BackupMandate} from '../Backup/BackupMandate';
 import {IBackupManifest} from '../IBackupManifest';
+import {TmpStorage} from '../TmpStorage';
 import {AQueueable, IQueueableJSON} from './AQueueable';
 import {EStatus} from './Queue';
 
@@ -9,10 +10,12 @@ import {EStatus} from './Queue';
 export abstract class AJob extends AQueueable {
 
     protected readonly _mandate: BackupMandate;
+    protected readonly _tmp: TmpStorage;
 
-    public constructor(mandate: BackupMandate) {
+    public constructor(mandate: BackupMandate, tmp: TmpStorage) {
         super();
         this._mandate = mandate;
+        this._tmp = tmp;
     }
 
     public async start(manifest: IBackupManifest): Promise<IBackupManifest> {

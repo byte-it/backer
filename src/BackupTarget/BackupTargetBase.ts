@@ -9,6 +9,7 @@ import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestInvalid} from './Exceptions/ManifestInvalid';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
+import {TmpStorage} from '../TmpStorage';
 
 /**
  * @category Target

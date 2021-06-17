@@ -1,12 +1,11 @@
-import * as Sentry from '@sentry/node';
 import {getCurrentHub, Hub} from '@sentry/node';
-import {Scope} from '@sentry/types';
 import {IConfig} from 'config';
 import {CronJob} from 'cron';
 import {ContainerInspectInfo} from 'dockerode';
 import * as Joi from 'joi';
 import {DateTime, Settings} from 'luxon';
 import {container, inject} from 'tsyringe';
+import {v1 as uuid} from 'uuid';
 import {LogEntry, Logger} from 'winston';
 import {IJsonable} from '../API/IJsonable';
 import {IBackupMiddleware} from '../BackupMiddleware/IBackupMiddleware';
@@ -24,6 +23,8 @@ import {SourceJob} from '../Queue/SourceJob';
 import {TargetJob} from '../Queue/TargetJob';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
+import {TmpStorage} from '../TmpStorage';
+
 
 export interface IBackupMandateJSON {
     id: string;
@@ -446,6 +447,7 @@ export class BackupMandate implements IJsonable {
         };
 
         const manifest: IBackupManifest = {
+            uuid: uuid(),
             name: backupName,
             containerName: this._containerName,
             sourceName: this._source.name,
@@ -456,21 +458,24 @@ export class BackupMandate implements IJsonable {
                 ...meta,
             },
         };
+
+        const tmp = new TmpStorage(container.resolve('Config'), manifest.uuid);
+
         // Create a new Hub and push a scope to encapsulate the following breadcrumbs created on the train
         const trainHub = new Hub(this._hub.getClient(), this._hub.getScope());
         trainHub.pushScope();
 
         const train = new JobTrain(manifest, [], trainHub);
-        train.enqueue(new SourceJob(this));
+        train.enqueue(new SourceJob(this, tmp));
 
         if (this._middlewareStack.length > 0) {
             for (const middleware of this._middlewareStack) {
-                train.enqueue(new MiddlewareJob(this, middleware));
+                train.enqueue(new MiddlewareJob(this, tmp, middleware));
             }
         }
 
-        train.enqueue(new TargetJob(this));
-        train.enqueue(new RetentionJob(this));
+        train.enqueue(new TargetJob(this, tmp));
+        train.enqueue(new RetentionJob(this, tmp));
 
         this.queue.enqueueTrain(train);
 

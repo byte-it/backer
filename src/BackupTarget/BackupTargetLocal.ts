@@ -136,10 +136,10 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
     ): Promise<IBackupManifest> {
 
         const containerPath = Path.join(this._backupDir, manifest.containerName);
-        const filePath = Path.join(containerPath, name);
+        const finalTargetPath = Path.join(containerPath, name);
 
-        if (existsSync(filePath)) {
-            throw new FileNotWriteable(`File ${filePath} already exists`);
+        if (existsSync(finalTargetPath)) {
+            throw new FileNotWriteable(`File ${finalTargetPath} already exists`);
         }
 
         if (!existsSync(containerPath)) {
@@ -148,17 +148,17 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
 
         const md5Hash = await md5(tmpPath);
 
-        await moveFile(tmpPath, filePath);
+        await moveFile(tmpPath, finalTargetPath);
 
 
         if (md5Hash !== getLastStep(manifest).md5) {
-            throw new Error(`File ${tmpPath} corrupted on movement to target location ${filePath}`);
+            throw new Error(`File ${tmpPath} corrupted on movement to target location ${finalTargetPath}`);
         }
 
-        const {size} = await fs.stat(filePath);
+        const {size} = await fs.stat(finalTargetPath);
 
-        // The current filePath maybe absolute or relative to the cwd. We want the path to be relative to the manifest.
-        manifest.path = Path.relative(this._backupDir, filePath);
+        // The current finalTargetPath maybe absolute or relative to the cwd. We want the path to be relative to the manifest.
+        manifest.path = Path.relative(this._backupDir, finalTargetPath);
         manifest.md5 = md5Hash;
         manifest.filesize = prettyBytes(size);
 

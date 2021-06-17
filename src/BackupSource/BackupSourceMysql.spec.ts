@@ -153,8 +153,9 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 'thedb',
             );
-            const {cmd} = source.createDumpCmd('thedumpname');
-            const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+            const {cmd} = source.createDumpCmd('thedumpname', tmpPath);
+            const expectedPath = Path.resolve(tmpPath, 'thedumpname.sql');
             const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" thedb > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
         });
@@ -166,7 +167,9 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 ['thedb1', 'thedb2'],
             );
-            const {cmd} = source.createDumpCmd('thedumpname');
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+
+            const {cmd} = source.createDumpCmd('thedumpname', tmpPath);
             const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
             const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --databases thedb1 thedb2 > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
@@ -179,7 +182,9 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 ['thedb1', 'thedb2'],
             );
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             const [, path] = cmd.match(/> (.*)$/);
             expect(Path.isAbsolute(path)).to.equal(true);
         });
@@ -191,7 +196,9 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 ['thedb1', 'thedb2'],
             );
-            const {env} = source.createDumpCmd('thedumpname.sql');
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+
+            const {env} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(env).to.include({DB_USER: 'thedbuser', DB_PASSWORD: 'thedbpassword'});
         });
         it('shouldn\'t write the secrets to the cmd string', () => {
@@ -202,7 +209,9 @@ describe('BackupSourceMysql', () => {
                 'thedbpassword',
                 ['thedb1', 'thedb2'],
             );
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.not.match(/(thedbuser|thedbpassword)/g);
         });
         it('should include the additional options', () => {
@@ -216,8 +225,9 @@ describe('BackupSourceMysql', () => {
                     optionkey: 'optionvalue',
                 },
             );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(--optionkey="optionvalue")/);
         });
         it('should set one ignored table', () => {
@@ -230,8 +240,9 @@ describe('BackupSourceMysql', () => {
                 {},
                 ['ignoredtable'],
             );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable")/);
         });
 
@@ -245,8 +256,9 @@ describe('BackupSourceMysql', () => {
                 {},
                 ['ignoredtable1', 'ignoredtable2'],
             );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2")/);
         });
 
@@ -260,8 +272,9 @@ describe('BackupSourceMysql', () => {
                 {},
                 ['ignoredtable1', 'ignoredtable2'],
             );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2" --ignore-table="thedb2.ignoredtable1" --ignore-table="thedb2.ignoredtable2")/);
         });
 
@@ -276,8 +289,9 @@ describe('BackupSourceMysql', () => {
                 [],
                 ['includetable1', 'includetable2'],
             );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname.sql');
+            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(thedb1 includetable1 includetable2)/);
         });
     });

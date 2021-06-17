@@ -1,5 +1,6 @@
 import {IBackupManifest} from '../IBackupManifest';
 import {IProvideable} from '../IProvideable';
+import {TmpStorage} from '../TmpStorage';
 
 /**
  *
@@ -24,6 +25,7 @@ export interface IBackupMiddleware extends IProvideable {
     /**
      *
      * @param manifest
+     * @param tmp
      */
-    execute(manifest: IBackupManifest): Promise<any>;
+    execute(manifest: IBackupManifest, tmp: TmpStorage): Promise<any>;
 }
