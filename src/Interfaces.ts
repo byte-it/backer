@@ -3,7 +3,7 @@ export interface ILabels extends Object {
   'target'?: string;
   'interval': string;
   'retention'?: string;
-  'namePattern'?: string;
+  'name_pattern'?: string;
   'network': string;
   'middleware'?: string;
 }
