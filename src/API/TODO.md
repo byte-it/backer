@@ -14,4 +14,4 @@
     - [x] Enqueued jobs
     - [ ] Failed Jobs
 
-- [ ] Delete socket on exit
+- [x] Delete socket on exit

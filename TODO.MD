@@ -27,7 +27,7 @@
 
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
-- [ ] Give backup manifest uuids via file hash or something
+- [x] Give backup manifest uuids via file hash or something
 - [x] Ensure manifest validity and integrity
 - [x] Add file sizes
 
@@ -39,9 +39,9 @@
 - [ ] Docs with Slate
 
 ## Realy Nice to have
-- [ ] Improved queque parallelity and concurence
+- [ ] Improved queue parallelization and concurrence
 - [ ] "File source" to backup Docker Volumes
-- [ ] Static pre configuration for sources
+- [ ] Static pre-configuration for sources
 - [ ] Implement postgres sources
 - [ ] Job queue priority
 - [ ] Recover from failure

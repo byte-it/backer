@@ -18,6 +18,6 @@
       - [ ] Actions (TBD)
       
   - [ ] Queue
-    - [ ] Stats
-    - [ ] Enqueued Trains
+    - [x] Stats
+    - [x] Enqueued Trains
     - [ ] Cancel Trains
