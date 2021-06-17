@@ -128,21 +128,6 @@ describe('BackupSourceMysql', () => {
             // tslint:disable-next-line:no-unused-expression
             expect(source.includeTablesList).to.be.null;
         });
-
-        it('should throw an error if constructed with multiple databases and an include list', () => {
-            expect(() =>
-                new BackupSourceMysql(
-                    'test',
-                    'thedbhost',
-                    'thedbuser',
-                    'thedbpassword',
-                    ['thedb1', 'thedb2'],
-                    {},
-                    [],
-                    ['table1', 'table2'],
-                ),
-            ).to.throw(Error);
-        });
     });
     describe('#createDumpCmd()', () => {
         it('should include all basic options', () => {
@@ -159,28 +144,14 @@ describe('BackupSourceMysql', () => {
             const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" thedb > ${expectedPath}`;
             expect(cmd).to.equal(expectedCommand);
         });
-        it('should handle multiple databases correctly', () => {
-            const source = new BackupSourceMysql(
-                'test',
-                'thedbhost',
-                'thedbuser',
-                'thedbpassword',
-                ['thedb1', 'thedb2'],
-            );
-            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
-            const {cmd} = source.createDumpCmd('thedumpname', tmpPath);
-            const expectedPath = Path.resolve(container.resolve<IConfig>('Config').get('tmpPath'), 'thedumpname.sql');
-            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --databases thedb1 thedb2 > ${expectedPath}`;
-            expect(cmd).to.equal(expectedCommand);
-        });
         it('should add the an absolute path to the command', () => {
             const source = new BackupSourceMysql(
                 'test',
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
-                ['thedb1', 'thedb2'],
+                'thedb1',
             );
             const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
@@ -194,7 +165,7 @@ describe('BackupSourceMysql', () => {
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
-                ['thedb1', 'thedb2'],
+                'thedb1',
             );
             const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
@@ -207,7 +178,7 @@ describe('BackupSourceMysql', () => {
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
-                ['thedb1', 'thedb2'],
+                'thedb1',
             );
             const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
 
@@ -220,7 +191,7 @@ describe('BackupSourceMysql', () => {
                 'thedbhost',
                 'thedbuser',
                 'thedbpassword',
-                ['thedb1', 'thedb2'],
+                'thedb1',
                 {
                     optionkey: 'optionvalue',
                 },
@@ -262,21 +233,6 @@ describe('BackupSourceMysql', () => {
             expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2")/);
         });
 
-        it('should set multiple ignored tables with multiple databases', () => {
-            const source = new BackupSourceMysql(
-                'test',
-                'thedbhost',
-                'thedbuser',
-                'thedbpassword',
-                ['thedb1', 'thedb2'],
-                {},
-                ['ignoredtable1', 'ignoredtable2'],
-            );
-            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
-
-            const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
-            expect(cmd).to.match(/(--ignore-table="thedb1.ignoredtable1" --ignore-table="thedb1.ignoredtable2" --ignore-table="thedb2.ignoredtable1" --ignore-table="thedb2.ignoredtable2")/);
-        });
 
         it('should set the included tables', () => {
             const source = new BackupSourceMysql(
@@ -293,6 +249,25 @@ describe('BackupSourceMysql', () => {
 
             const {cmd} = source.createDumpCmd('thedumpname.sql', tmpPath);
             expect(cmd).to.match(/(thedb1 includetable1 includetable2)/);
+        });
+
+        it('should create two dump command if data for tables is ignored', () => {
+            const source = new BackupSourceMysql(
+                'test',
+                'thedbhost',
+                'thedbuser',
+                'thedbpassword',
+                'thedb',
+                null,
+                null,
+                null,
+                ['ignoredata'],
+            );
+            const tmpPath = Path.join(process.cwd(), container.resolve<IConfig>('Config').get<string>('tmpPath'));
+            const {cmd} = source.createDumpCmd('thedumpname', tmpPath);
+            const expectedPath = Path.resolve(tmpPath, 'thedumpname.sql');
+            const expectedCommand = `mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --no-data thedb > ${expectedPath} && mysqldump --host="thedbhost" --user="$DB_USER" --password="$DB_PASSWORD" --no-create-info thedb >> ${expectedPath}`;
+            expect(cmd).to.equal(expectedCommand);
         });
     });
 });

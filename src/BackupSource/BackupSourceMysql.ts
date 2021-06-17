@@ -19,6 +19,7 @@ export interface IBackupSourceMysqlJSON extends IBackupSourceJSON {
         database: string | string[],
         tableIgnoreList?: string | string[],
         tableIncludeList?: string | string[],
+        dataIgnoreList?: string | string[],
         options?: object,
     };
 }
@@ -30,6 +31,7 @@ export interface IMysqlLabels extends ILabels {
         password: string,
         tableIgnoreList?: string,
         tableIncludeList?: string,
+        dataIgnoreList?: string,
         options?: object,
     };
 }
@@ -50,6 +52,7 @@ export class BackupSourceMysql implements IBackupSource {
             password: Joi.string().required(),
             tableIgnoreList: Joi.string(),
             tableIncludeList: Joi.string(),
+            dataIgnoreList: Joi.string(),
             user: Joi.string().required(),
         });
     }
@@ -105,6 +108,11 @@ export class BackupSourceMysql implements IBackupSource {
             tableIgnoreList = labels.mysql.tableIgnoreList.split(',');
         }
 
+        let dataIgnoreList: string[] = null;
+        if (labels.mysql.dataIgnoreList) {
+            dataIgnoreList = labels.mysql.dataIgnoreList.split(',');
+        }
+
         if (
             tableIncludeList !== null &&
             tableIgnoreList !== null
@@ -116,18 +124,31 @@ export class BackupSourceMysql implements IBackupSource {
             });
             tableIncludeList = null;
         }
-        if (Array.isArray(db) && Array.isArray(tableIncludeList)) {
+
+        if (
+            tableIncludeList !== null &&
+            dataIgnoreList !== null
+        ) {
             logger.log({
                 level: 'warning',
-                message: `Container ${containerName}: Found include list & multiple databases, the include list will be ignored`,
+                message: `Container ${containerName}: Found data ignore & table include list, the include list is preferred!`,
                 ...defaultLogMeta,
             });
+            dataIgnoreList = null;
         }
 
         const host = getHostForContainer(labels.network, inspectInfo);
 
         return new BackupSourceMysql(
-            inspectInfo.Name, host, mysqlUser, mysqlPassword, db, options, tableIgnoreList, tableIncludeList,
+            inspectInfo.Name,
+            host,
+            mysqlUser,
+            mysqlPassword,
+            db,
+            options,
+            tableIgnoreList,
+            tableIncludeList,
+            dataIgnoreList,
         );
     }
 
@@ -144,31 +165,35 @@ export class BackupSourceMysql implements IBackupSource {
     private readonly _dbHost: string;
     private readonly _dbUser: string;
     private readonly _dbPassword: string;
-    private readonly _db: string | string[];
+    private readonly _db: string;
     private readonly _options: object;
     private readonly _ignoreTablesList?: string[];
     private readonly _includeTablesList?: string[];
+    private readonly _ignoreDataList?: string[];
 
     /**
      * @param name The name for this backup instance (e.g. the container name)
      * @param dbHost The host (e.g IP-address of the host)
      * @param dbUser The database user to access the db
      * @param dbPassword The database user password to access the db
-     * @param db The database to backup, either a single string or an array of databases
+     * @param db The database to backup
      * @param options Optional options directly passed to mysqldump
      * @param ignoreTablesList An array of tables exclude from the dump
      * @param includeTablesList An array of table to include in the dump.
      *         Note that only black or whitelist can be used. The blacklist will be prioritised above the whitelist
+     * @param ignoreDataList
      */
     public constructor(
         name: string,
         dbHost: string,
         dbUser: string,
         dbPassword: string,
-        db: string | string[],
+        db: string,
         options?: object,
         ignoreTablesList?: string[],
-        includeTablesList?: string[]) {
+        includeTablesList?: string[],
+        ignoreDataList?: string[],
+    ) {
         this._name = name;
         this._dbHost = dbHost;
         this._dbUser = dbUser;
@@ -176,14 +201,15 @@ export class BackupSourceMysql implements IBackupSource {
         this._db = db;
         this._options = options;
         this._ignoreTablesList = ignoreTablesList;
+        this._ignoreDataList = ignoreDataList;
 
         if (
-            Array.isArray(db)
-            && db.length > 1
-            && Array.isArray(includeTablesList)
+            Array.isArray(includeTablesList)
+            && Array.isArray(ignoreDataList)
         ) {
-            throw new Error('Simultaneous usage of multiple databases and ignored databases is disallowed');
+            throw new Error('Simultaneous usage of included tables and ignored data for tables is disallowed');
         }
+
         if (!(Array.isArray(ignoreTablesList) && ignoreTablesList.length > 0)) {
             this._includeTablesList = includeTablesList;
         }
@@ -242,6 +268,16 @@ export class BackupSourceMysql implements IBackupSource {
     }
 
     /**
+     * Get the whitelist
+     */
+    get ignoreDataTableList(): string[] | null {
+        if (typeof this._ignoreDataList === 'undefined') {
+            return null;
+        }
+        return this._ignoreDataList;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public async backup(manifest: IBackupManifest, tmp: TmpStorage): Promise<IBackupManifest> {
@@ -287,50 +323,66 @@ export class BackupSourceMysql implements IBackupSource {
             DB_PASSWORD: this._dbPassword,
         };
 
-        let cmd = `mysqldump --host="${this._dbHost}" --user="$DB_USER" --password="$DB_PASSWORD"`;
+        const ignoreDataForTables = Array.isArray(this._ignoreDataList);
+        const cmd = [];
+        const mysqlBase = `mysqldump --host="${this._dbHost}" --user="$DB_USER" --password="$DB_PASSWORD"`;
 
-        if (this._options) {
-            for (const optionName of Object.keys(this._options)) {
-                cmd += ` --${optionName}="${this._options[optionName]}"`;
-            }
+        cmd.push(mysqlBase);
+
+        // If data for some tables should be ignored we need to create 2 dumps, one with only schemas,
+        // an one with actual data.
+        if (ignoreDataForTables) {
+            cmd.push(`--no-data`);
         }
+
+        this.addOptions(cmd);
 
         if (this._ignoreTablesList) {
-            if (!Array.isArray(this._db)) {
-                for (const table of this._ignoreTablesList) {
-                    cmd += ` --ignore-table="${this._db}.${table}"`;
-                }
-            } else {
-                for (const db of this._db) {
-                    for (const table of this._ignoreTablesList) {
-                        cmd += ` --ignore-table="${db}.${table}"`;
-                    }
-                }
+            for (const table of this._ignoreTablesList) {
+                cmd.push(`--ignore-table="${this._db}.${table}"`);
             }
-        }
-        if (Array.isArray(this._db)) {
-            cmd += ' --databases';
-            for (const db of this._db) {
-                cmd += ` ${db}`;
-            }
-        } else {
-            cmd += ` ${this._db}`;
         }
 
-        if (!Array.isArray(this._db)) {
-            if (this._includeTablesList) {
-                for (const table of this._includeTablesList) {
-                    cmd += ` ${table}`;
-                }
+        cmd.push(`${this._db}`);
+
+        if (this._includeTablesList && !ignoreDataForTables) {
+            for (const table of this._includeTablesList) {
+                cmd.push(`${table}`);
             }
         }
+
         const tmpFileName = `${name}${this.getFileSuffix()}`;
         const tmpFile = Path.join(tmpPath, tmpFileName);
 
-        cmd += ` > ${tmpFile}`;
+        cmd.push(`> ${tmpFile}`);
+
+        if (ignoreDataForTables) {
+            cmd.push('&&');
+            cmd.push(mysqlBase);
+
+            // The second dump only includes the data, no schema definitions
+            cmd.push('--no-create-info');
+
+            this.addOptions(cmd);
+
+            if (this._ignoreTablesList) {
+                for (const table of this._ignoreTablesList) {
+                    cmd.push(`--ignore-table="${this._db}.${table}"`);
+                }
+                // Add the data ignore tables
+                for (const table of this._ignoreDataList) {
+                    cmd.push(`--ignore-table="${this._db}.${table}"`);
+                }
+            }
+
+            cmd.push(`${this._db}`);
+
+            // Append the second dump to the first
+            cmd.push(`>> ${tmpFile}`);
+        }
 
         return {
-            cmd,
+            cmd: cmd.join(' '),
             env,
             tmpFile,
             tmpFileName,
@@ -354,5 +406,13 @@ export class BackupSourceMysql implements IBackupSource {
                 options: this._options,
             },
         };
+    }
+
+    private addOptions(cmd: string[]) {
+        if (this._options) {
+            for (const optionName of Object.keys(this._options)) {
+                cmd.push(`--${optionName}="${this._options[optionName]}"`);
+            }
+        }
     }
 }
