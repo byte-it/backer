@@ -177,8 +177,9 @@ The `mysql` source supports following options via container labels:
 - `user`: The database user
 - `database`: A single database or multiple databases
 - `password`: The database password
-- `tableIgnoreList?`: A comma separated list of tables to ignore
-- `tableIncludeList?`: A comma separated list tables to include
+- `ignore_tables?`: A comma separated list of tables to ignore
+- `include_tables?`: A comma separated list of tables to include
+- `ignore_data?`: A comma separated list of tables to ignore data from
 - `options?`: Each option must be a sub item to the `options` label. The key must be the full name of the option. 
     Each option will be printed in this format: `--OPTION_NAME="OPTION_VALUE"`. Options that don't use a value must use
     a boolean value (false won't be added to the command) 
@@ -190,7 +191,8 @@ labels:
     backer.mysql.user: Text:root,
     backer.mysql.password: Env:MYSQL_ROOT_PASSWORD,
     backer.mysql.database: test,
-    backer.mysql.tableIgnoreList: 'table1,table2',
+    backer.mysql.ignore_tables: 'table1,table2',
+    backer.mysql.ignore_data: 'table3',
     backer.mysql.options.no-data: true
     backer.mysql.options.default-auth: 'plugin'
 ```

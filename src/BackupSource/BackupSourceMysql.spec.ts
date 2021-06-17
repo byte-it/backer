@@ -111,6 +111,38 @@ describe('BackupSourceMysql', () => {
                 optionkey: 'optionvalue',
             });
         });
+        it('should extract the data ignore tables', () => {
+            const testContainer = {
+                Config: {
+                    Labels: {
+                        'backer.interval': '* * * * * *',
+                        'backer.namePattern': 'test',
+                        'backer.network': 'test',
+                        'backer.retention': '10',
+                        'backer.type': 'mysql',
+                        'backer.mysql.user': 'root',
+                        'backer.mysql.password': '1234',
+                        'backer.mysql.database': 'test',
+                        'backer.mysql.ignore_data': 'ignore1, ignore2 ,ignore3 ',
+                    },
+                },
+                Name: 'test',
+                NetworkSettings: {
+                    Networks: {
+                        test: {
+                            IPAddress: '1.1.1.1',
+                        },
+                    },
+                },
+            };
+
+            // @ts-ignore
+            const source = BackupSourceMysql.fromContainer(testContainer, extractLabels(testContainer.Config.Labels));
+
+            expect(source.ignoreDataTableList).to.include('ignore1');
+            expect(source.ignoreDataTableList).to.include('ignore2');
+            expect(source.ignoreDataTableList).to.include('ignore3');
+        });
     });
     describe('#constructor()', () => {
         it('should prefer ignore over include list', () => {

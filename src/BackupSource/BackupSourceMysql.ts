@@ -29,9 +29,9 @@ export interface IMysqlLabels extends ILabels {
         user: string,
         database: string,
         password: string,
-        tableIgnoreList?: string,
-        tableIncludeList?: string,
-        dataIgnoreList?: string,
+        ignore_tables?: string,
+        include_tables?: string,
+        ignore_data?: string,
         options?: object,
     };
 }
@@ -50,9 +50,9 @@ export class BackupSourceMysql implements IBackupSource {
             database: Joi.string().required(),
             options: Joi.object().unknown(true),
             password: Joi.string().required(),
-            tableIgnoreList: Joi.string(),
-            tableIncludeList: Joi.string(),
-            dataIgnoreList: Joi.string(),
+            ignore_tables: Joi.string(),
+            include_tables: Joi.string(),
+            ignore_data: Joi.string(),
             user: Joi.string().required(),
         });
     }
@@ -99,18 +99,18 @@ export class BackupSourceMysql implements IBackupSource {
         }
 
         let tableIncludeList: string[] = null;
-        if (labels.mysql.tableIncludeList) {
-            tableIncludeList = labels.mysql.tableIncludeList.split(',');
+        if (labels.mysql.include_tables) {
+            tableIncludeList = labels.mysql.include_tables.split(',').map((val) => val.trim());
         }
 
         let tableIgnoreList: string[] = null;
-        if (labels.mysql.tableIncludeList) {
-            tableIgnoreList = labels.mysql.tableIgnoreList.split(',');
+        if (labels.mysql.ignore_tables) {
+            tableIgnoreList = labels.mysql.ignore_tables.split(',').map((val) => val.trim());
         }
 
         let dataIgnoreList: string[] = null;
-        if (labels.mysql.dataIgnoreList) {
-            dataIgnoreList = labels.mysql.dataIgnoreList.split(',');
+        if (labels.mysql.ignore_data) {
+            dataIgnoreList = labels.mysql.ignore_data.split(',').map((val) => val.trim());
         }
 
         if (
