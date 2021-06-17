@@ -29,7 +29,7 @@
 - [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something
 - [x] Ensure manifest validity and integrity
-- [ ] Add file sizes
+- [x] Add file sizes
 
 ### Testing
 - [ ] Unify file access for testing
