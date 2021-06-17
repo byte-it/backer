@@ -25,7 +25,7 @@ describe('BackupSourceMysql', () => {
                 Config: {
                     Labels: {
                         'backer.interval': '* * * * * *',
-                        'backer.namePattern': 'test',
+                        'backer.name_pattern': 'test',
                         'backer.network': 'test',
                         'backer.retention': '10',
                         'backer.type': 'mysql',
@@ -55,7 +55,7 @@ describe('BackupSourceMysql', () => {
                 Config: {
                     Labels: {
                         'backer.interval': '* * * * * *',
-                        'backer.namePattern': 'test',
+                        'backer.name_pattern': 'test',
                         'backer.network': 'test',
                         'backer.retention': '10',
                         'backer.type': 'mysql',
@@ -84,7 +84,7 @@ describe('BackupSourceMysql', () => {
                 Config: {
                     Labels: {
                         'backer.interval': '* * * * * *',
-                        'backer.namePattern': 'test',
+                        'backer.name_pattern': 'test',
                         'backer.network': 'test',
                         'backer.retention': '10',
                         'backer.type': 'mysql',
@@ -116,7 +116,7 @@ describe('BackupSourceMysql', () => {
                 Config: {
                     Labels: {
                         'backer.interval': '* * * * * *',
-                        'backer.namePattern': 'test',
+                        'backer.name_pattern': 'test',
                         'backer.network': 'test',
                         'backer.retention': '10',
                         'backer.type': 'mysql',

@@ -34,7 +34,7 @@ describe('BackupMandate', () => {
                         'backer.mysql.database': 'test',
                         'backer.mysql.password': '1234',
                         'backer.mysql.user': 'root',
-                        'backer.namePattern': 'test',
+                        'backer.name_pattern': 'test',
                         'backer.network': 'test',
                         'backer.retention': '10',
                         'backer.type': 'mysql',

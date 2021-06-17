@@ -140,7 +140,7 @@ backer.target: 'default'
 backer.type:  'mysql'
 backer.interval: '0 0 * * *'
 backer.retention: 10
-backer.namePattern: '<DATE>-<CONTAINER_NAME>'
+backer.name_pattern: '<DATE>-<CONTAINER_NAME>'
 backer.network: 'test_default'
 ```
 
@@ -150,7 +150,7 @@ backer.network: 'test_default'
 |`type`|The type of the source plugin to use.||
 |`interval`|The interval in wich to create the backups. Checkout [cron](https://www.npmjs.com/package/cron) for all supported values. |`0 0 * * *`|
 |`retention`|Defines how many backups should be retained.|`10`|
-|`namePattern`|The pattern used to generate the backup names|`<DATE>-<CONTAINER_NAME>`|
+|`name_pattern`|The pattern used to generate the backup names|`<DATE>-<CONTAINER_NAME>`|
 |`network`|The docker network to connect to the database container||
 
 #### Sources

@@ -21,10 +21,9 @@ import {Queue} from '../Queue/Queue';
 import {RetentionJob} from '../Queue/RetentionJob';
 import {SourceJob} from '../Queue/SourceJob';
 import {TargetJob} from '../Queue/TargetJob';
+import {TmpStorage} from '../TmpStorage';
 import {extractLabels} from '../Util';
 import {ValidationError} from '../ValidationError';
-import {TmpStorage} from '../TmpStorage';
-
 
 export interface IBackupMandateJSON {
     id: string;
@@ -111,7 +110,7 @@ export class BackupMandate implements IJsonable {
             type: Joi.string().required(),
             interval: Joi.string(),
             retention: Joi.number(),
-            namePattern: Joi.string(),
+            name_pattern: Joi.string(),
             network: Joi.string().required(),
             middleware: Joi.string().regex(/^(\w|\d|-|_)+(,( )?(\w|\d|-|_)+)*$/),
         }).options({
@@ -156,7 +155,7 @@ export class BackupMandate implements IJsonable {
 
         const defaultLabels = {
             interval: '0 0 * * *',
-            namePattern: '<DATE>-<CONTAINER_NAME>',
+            name_pattern: '<DATE>-<CONTAINER_NAME>',
             retention: '10',
         };
 
@@ -234,7 +233,7 @@ export class BackupMandate implements IJsonable {
             target,
             labels.interval,
             parseInt(labels.retention, 10),
-            labels.namePattern,
+            labels.name_pattern,
             middlewareStack,
             hub,
         );
