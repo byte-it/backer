@@ -23,11 +23,13 @@
 - [x] Middleware Stack -> Compression (gzip), Encryption (ccrypt)
 - [x] Static config for containers
 - [ ] Automated docker build
-- [ ] Sentry Integration
+- [x] Sentry Integration
+
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
 - [ ] Give backup manifest uuids via file hash or something
 - [x] Ensure manifest validity and integrity
+- [ ] Add file sizes
 
 ### Testing
 - [ ] Unify file access for testing
@@ -43,7 +45,7 @@
 - [ ] Implement postgres sources
 - [ ] Job queue priority
 - [ ] Recover from failure
-- [ ] Failure Reporting
+- [ ] Notification via Services (Mail/Slack/etc .. )
 - [ ] S3 Target Path prefix
 - [ ] More complex retention schedules
 - [ ] Implement queue locking per source

@@ -451,6 +451,7 @@ export class BackupMandate implements IJsonable {
             sourceName: this._source.name,
             date: DateTime.now().toFormat('yyyyMMdd-HH-mm'),
             steps: [],
+            filesize: null,
             optional: {
                 ...meta,
             },

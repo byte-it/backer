@@ -105,9 +105,8 @@ export abstract class BackupTargetBase implements IBackupTarget {
         if (!(existsSync(uri) && lstatSync(uri).isFile())) {
             throw new FileNotFound(`File ${uri} doesn't exist`);
         }
-        const md5Hash = await md5(uri);
+
         await this.moveBackupToTarget(uri, Path.basename(uri), manifest);
-        manifest.md5 = md5Hash;
 
         this.manifest.backups.push(manifest);
         await this.writeManifestToTarget();

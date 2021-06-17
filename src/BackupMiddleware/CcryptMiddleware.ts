@@ -1,15 +1,16 @@
+import ProcessEnv = NodeJS.ProcessEnv;
+import {exec, ExecException} from 'child_process';
+import {promises as fs} from 'fs';
+import * as md5 from 'md5-file';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {getLastStep} from '../Util';
 import {IBackupMiddleware, IBackupMiddlewareConfig} from './IBackupMiddleware';
-import ProcessEnv = NodeJS.ProcessEnv;
-import {exec, ExecException} from 'child_process';
-import * as md5 from 'md5-file';
 
 export interface IBackupCcryptMiddlewareConfig extends IBackupMiddlewareConfig {
     key: string;
 }
 
-export class CcryptMiddlware implements IBackupMiddleware {
+export class CcryptMiddleware implements IBackupMiddleware {
 
     get name(): string {
         return this._name;
@@ -27,7 +28,6 @@ export class CcryptMiddlware implements IBackupMiddleware {
 
     /**
      *
-     * @param name
      */
     public constructor(config: IBackupCcryptMiddlewareConfig) {
         this._name = config.name;
@@ -42,16 +42,20 @@ export class CcryptMiddlware implements IBackupMiddleware {
             exec(
                 cmd,
                 {env},
-                (error?: ExecException) => {
+                async (error?: ExecException) => {
                     if (error) {
                         reject(error);
                     } else {
-                        const md5Hash = md5.sync(`${uri}${this.fileSuffix()}`);
+                        const tmpFile = `${uri}${this.fileSuffix()}`;
+                        const md5Hash = await md5(tmpFile);
+                        const {size} = await fs.stat(tmpFile);
+
                         const step: IBackupManifestStep = {
                             processor: `middleware.${this.name}`,
                             fileName: `${fileName}${this.fileSuffix()}`,
-                            uri: `${uri}${this.fileSuffix()}`,
+                            uri: tmpFile,
                             md5: md5Hash,
+                            filesize: size.toString(),
                         };
                         manifest.steps.push(step);
                         resolve(manifest);
@@ -59,6 +63,13 @@ export class CcryptMiddlware implements IBackupMiddleware {
                 },
             );
         });
+    }
+
+    /**
+     * @return
+     */
+    public fileSuffix() {
+        return '.cpt';
     }
 
     /**
@@ -75,12 +86,5 @@ export class CcryptMiddlware implements IBackupMiddleware {
             cmd: `ccencrypt -e -E key ${lastStep.uri}`,
             env,
         };
-    }
-
-    /**
-     * @return
-     */
-    public fileSuffix() {
-        return '.cpt';
     }
 }

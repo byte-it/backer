@@ -8,7 +8,6 @@ import * as Path from 'path';
 import {container} from 'tsyringe';
 import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {BackupTargetS3, IBackupTargetS3Config} from './BackupTargetS3';
-import {FileNotAccessible} from './Exceptions/FileNotAccessible';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
 
@@ -219,7 +218,7 @@ describe('BackupTargetS3', () => {
             const s3Client = new AWS.S3({});
 
             const instance = new BackupTargetS3(container.resolve('Logger'), targetConfig, s3Client);
-            expect(instance.doesFileExistOnTarget('test')).to.be.rejectedWith(FileNotAccessible);
+            expect(instance.doesFileExistOnTarget('test')).to.be.rejectedWith(FilePermissionDenied);
 
             AWSMock.restore('S3');
             return;
@@ -238,19 +237,31 @@ describe('BackupTargetS3', () => {
                 callback(null, {});
             });
 
+            AWSMock.mock('S3', 'headObject', (params, callback) => {
+                callback(null, {ContentLength: 0});
+            });
+
             const s3Client = new AWS.S3({});
 
             const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
+            const tmpPath = Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/s3/empty');
+            fs.writeFileSync(tmpPath, 'test');
+
             const manifest: IBackupManifest = {
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
-                steps: [],
+                filesize: null,
+                steps: [{
+                    processor: 'test',
+                    uri: tmpPath,
+                    fileName: Path.basename(tmpPath),
+                    md5: 'd41d8cd98f00b204e9800998ecf8427e',
+                    filesize: '0',
+                }],
             };
 
-            const tmpPath = Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/s3/empty');
-            fs.writeFileSync(tmpPath, 'test');
             await instance.moveBackupToTarget(tmpPath, 'empty', manifest);
 
             AWSMock.restore('S3');

@@ -1,14 +1,16 @@
 import {AWSError} from 'aws-sdk';
 import S3 = require('aws-sdk/clients/s3');
 import * as fs from 'fs';
+import * as prettyBytes from 'pretty-bytes';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
+import {getLastStep} from '../Util';
 import {BackupTargetBase} from './BackupTargetBase';
 import {IBackupTargetLocalConfig} from './BackupTargetLocal';
-import {FileNotAccessible} from './Exceptions/FileNotAccessible';
 import {FileNotFound} from './Exceptions/FileNotFound';
 import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
+import {ManifestInvalid} from './Exceptions/ManifestInvalid';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
 
@@ -44,8 +46,6 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         return this._s3Client;
     }
 
-    protected config: IBackupTargetS3Config;
-
     /**
      * Factory
      * @param {IBackupTargetLocalConfig} config
@@ -61,6 +61,8 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         await target.init();
         return target;
     }
+
+    protected config: IBackupTargetS3Config;
 
     protected _type = 's3';
 
@@ -140,7 +142,7 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
             }).promise();
         } catch (e) {
             if (e.statusCode === 403) {
-                throw new FileNotAccessible();
+                throw new FilePermissionDenied();
             }
             return false;
         }
@@ -157,13 +159,23 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     ): Promise<IBackupManifest> {
 
         const finalPath = `${manifest.containerName}/${name}`;
+        const {md5} = getLastStep(manifest);
         try {
             await this._s3Client.putObject({
                 Body: fs.createReadStream(tmpPath),
                 Bucket: this._bucket,
                 Key: finalPath,
+                ContentMD5: md5,
             }).promise();
+
+            const {ContentLength} = await this._s3Client.headObject({
+                Bucket: this._bucket,
+                Key: finalPath,
+            }).promise();
+
             manifest.path = finalPath;
+            manifest.filesize = prettyBytes(ContentLength);
+
         } catch (e) {
             this.handleAWSError(e);
         }
@@ -192,13 +204,18 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     public async readManifestFromTarget(): Promise<IBackupTargetManifest> {
         let body = null;
         try {
-            const reponse = await this._s3Client.getObject({
+            const response = await this._s3Client.getObject({
                 Bucket: this._bucket,
                 Key: BackupTargetS3.manifestName,
             }).promise();
-            body = reponse.Body;
+            body = response.Body;
         } catch (e) {
-            throw new ManifestNotFound();
+            switch (e.statusCode) {
+                case 403:
+                    throw new FilePermissionDenied();
+                case 404:
+                    throw new ManifestNotFound();
+            }
         }
 
         let manifestString;
@@ -209,9 +226,9 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         }
 
         try {
-            return JSON.parse(body) as IBackupTargetManifest;
+            return JSON.parse(manifestString) as IBackupTargetManifest;
         } catch (e) {
-            throw new ManifestNotFound();
+            throw new ManifestInvalid();
         }
     }
 

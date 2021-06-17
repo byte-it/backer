@@ -73,6 +73,7 @@ describe('BackupTargetLocal', () => {
             const tmpPath = Path.join(process.cwd(), '/test/empty');
             fs.writeFileSync(tmpPath, '');
             const manifest: IBackupManifest = {
+                filesize: null,
                 name: 'test',
                 containerName: 'test',
                 date: '',
@@ -82,7 +83,8 @@ describe('BackupTargetLocal', () => {
                         processor: 'test',
                         uri: tmpPath,
                         fileName: Path.basename(tmpPath),
-                        md5: '',
+                        md5: 'd41d8cd98f00b204e9800998ecf8427e',
+                        filesize: '0',
                     },
                 ],
             };

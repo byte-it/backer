@@ -22,6 +22,11 @@ export interface IBackupManifestStep {
     md5: string;
 
     /**
+     * The filesize in bytes
+     */
+    filesize: string;
+
+    /**
      * Contains optional metadata provided by the source or target
      */
     optional?: {
@@ -78,6 +83,11 @@ export interface IBackupManifest {
      * The md5 of the stored backup file
      */
     md5?: string;
+
+    /**
+     * The final filesize on the target location in a human readable format
+     */
+    filesize: string;
 
     /**
      * Contains optional metadata provided by the source or target

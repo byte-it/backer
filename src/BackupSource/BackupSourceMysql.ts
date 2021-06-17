@@ -2,6 +2,7 @@ import {exec, ExecException} from 'child_process';
 import ProcessEnv = NodeJS.ProcessEnv;
 import {IConfig} from 'config';
 import {ContainerInspectInfo} from 'dockerode';
+import {promises as fs} from 'fs';
 import * as Joi from 'joi';
 import * as md5 from 'md5-file';
 import * as Path from 'path';
@@ -249,16 +250,18 @@ export class BackupSourceMysql implements IBackupSource {
             exec(
                 cmd,
                 {env},
-                (error?: ExecException) => {
+                async (error?: ExecException) => {
                     if (error) {
                         reject(error);
                     } else {
-                        const md5Hash = md5.sync(tmpFile);
+                        const md5Hash = await md5(tmpFile);
+                        const {size} = await fs.stat(tmpFile);
                         const step: IBackupManifestStep = {
                             processor: 'source.mysql',
                             fileName: tmpFileName,
                             uri: tmpFile,
                             md5: md5Hash,
+                            filesize: size.toString(),
                         };
                         manifest.steps.push(step);
                         resolve(manifest);

@@ -1,10 +1,13 @@
 import {constants, existsSync, promises as fs} from 'fs';
 import * as makeDir from 'make-dir';
+import * as md5 from 'md5-file';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
+import * as prettyBytes from 'pretty-bytes';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
+import {getLastStep} from '../Util';
 import {BackupTargetBase} from './BackupTargetBase';
 import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
@@ -79,7 +82,7 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
         this._backupDir = String(calculatedPath).replace(/\/+$/, '');
     }
 
-    public toJSON(): IBackupTargetJSON& { local: { path: string } } {
+    public toJSON(): IBackupTargetJSON & { local: { path: string } } {
         return {
             name: this.name,
             type: this.type,
@@ -143,10 +146,21 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
             await makeDir(containerPath);
         }
 
+        const md5Hash = await md5(tmpPath);
+
         await moveFile(tmpPath, filePath);
+
+
+        if (md5Hash !== getLastStep(manifest).md5) {
+            throw new Error(`File ${tmpPath} corrupted on movement to target location ${filePath}`);
+        }
+
+        const {size} = await fs.stat(filePath);
 
         // The current filePath maybe absolute or relative to the cwd. We want the path to be relative to the manifest.
         manifest.path = Path.relative(this._backupDir, filePath);
+        manifest.md5 = md5Hash;
+        manifest.filesize = prettyBytes(size);
 
         return manifest;
     }
