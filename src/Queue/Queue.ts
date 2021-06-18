@@ -1,7 +1,11 @@
 import {SpanStatus} from '@sentry/tracing';
+import {Mutex} from 'async-mutex';
 import {inject, singleton} from 'tsyringe';
 import {Logger} from 'winston';
-import {JobTrain} from './JobTrain';
+import {Storage} from '../Storage';
+import {AJob} from './AJob';
+import {IQueueableJSON} from './AQueueable';
+import {IJobTrainJSON, JobTrain} from './JobTrain';
 
 export enum EStatus {
     CREATED,
@@ -11,16 +15,32 @@ export enum EStatus {
     FAILED,
 }
 
+export interface IStats {
+    avg_waiting_time: number;
+    total_trains: number;
+    failed_trains: number;
+    peak_waiting_time: number;
+}
+
+export type IFailedTrain =
+    IJobTrainJSON &
+    { finishedJobs: IQueueableJSON[], failedJob: IQueueableJSON & { error: any } };
+
 /**
  * A Queue that works with concatenated jobs.
  *
  * @todo TEST
- * @todo Some stats?
  */
 @singleton()
 export class Queue {
-    get stats(): { avg_waiting_time: number; total_backups: number; peak_waiting_time: number } {
-        return {...this._stats};
+    get failedTrains(): IFailedTrain[] {
+        return this._failedTrains;
+    }
+
+    get stats(): IStats & { enqueued: number } {
+        return {
+            ...this._stats, enqueued: this.trains.length,
+        };
     }
 
     get trains(): JobTrain[] {
@@ -28,6 +48,8 @@ export class Queue {
     }
 
     private _trains: JobTrain[] = [];
+
+    private _failedTrains: IFailedTrain[] = [];
 
     private _working: boolean = false;
 
@@ -37,15 +59,19 @@ export class Queue {
 
     private _jobPromise: Promise<any>;
 
+    private _failedTrainsMutex: Mutex;
+
     private _concurent: number = 1;
 
-    private _stats = {
+    private _stats: IStats = {
         peak_waiting_time: 0,
         avg_waiting_time: 0,
-        total_backups: 0,
+        total_trains: 0,
+        failed_trains: 0,
     };
 
-    constructor(@inject('Logger') private _logger: Logger) {
+    constructor(@inject('Logger') private _logger: Logger,  @inject(Storage) private _storage: Storage) {
+        this._failedTrainsMutex = new Mutex();
     }
 
     /**
@@ -82,6 +108,18 @@ export class Queue {
     }
 
     /**
+     *
+     * @param train
+     * @private
+     */
+    private async addFailedTrain(train: IFailedTrain) {
+        await this._failedTrainsMutex.runExclusive(async () => {
+            this._failedTrains.push(train);
+            await this._storage.writeFile('queue.json', this._failedTrains);
+        });
+    }
+
+    /**
      * @todo Handle concurrency > 1
      * @private
      */
@@ -109,6 +147,8 @@ export class Queue {
                         },
                     });
 
+                    const finishedJobs: AJob[] = [];
+
                     while (this._working && train.peak() != null && failed === false) {
                         const job = train.dequeue();
                         train.getHub().setTag('job_type', job.type());
@@ -124,6 +164,8 @@ export class Queue {
                             this._jobPromise = job.start(train.manifest);
                             await this._jobPromise;
                             jobTransaction.setStatus(SpanStatus.Ok);
+
+                            finishedJobs.push(job);
                             this._logger.log({
                                 level: 'debug',
                                 message: `Finished job ${job.uuid}. Took  ${job.workingDuration.as('seconds')} seconds.`,
@@ -143,6 +185,13 @@ export class Queue {
                             failed = true;
                             job.status = EStatus.FAILED;
                             train.status = EStatus.FAILED;
+                            this._stats.failed_trains++;
+
+                            await this.addFailedTrain({
+                                ...train.toJSON(),
+                                finishedJobs: finishedJobs.map((finishedJob) => finishedJob.toJSON()),
+                                failedJob: {...job.toJSON(), error: e},
+                            });
                         }
                         jobTransaction.finish();
                     }
@@ -161,7 +210,7 @@ export class Queue {
                 await this._trainPromise;
 
                 // Track the stats
-                this._stats.total_backups++;
+                this._stats.total_trains++;
                 const secondsWaited = train.waitingDuration.toMillis() / 1000;
                 this._stats.avg_waiting_time = this._stats.avg_waiting_time === 0 ?
                     secondsWaited :
@@ -171,7 +220,6 @@ export class Queue {
                     this._stats.peak_waiting_time = secondsWaited;
                 }
 
-                // @todo: store failed trains or something
                 this._logger.log({
                     level: 'debug',
                     message: `Finished train ${train.uuid}. Took  ${train.workingDuration.as('seconds')} seconds.`,

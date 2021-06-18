@@ -17,6 +17,7 @@
   "dependencies": {
     "@sentry/node": "^6.5.1",
     "@sentry/tracing": "^6.5.1",
+    "async-mutex": "^0.3.1",
     "aws-sdk": "^2.885.0",
     "config": "^3.3.6",
     "cron": "^1.8.2",
@@ -38,6 +39,7 @@
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-transport-sentry-node": "^1.0.2",
+    "write-file-atomic": "^3.0.3",
     "yaml": "^1.10.2"
   },
   "devDependencies": {
