@@ -135,7 +135,8 @@ export class Queue {
                             this._logger.log({
                                 level: 'error',
                                 message: `Error in job ${job.uuid}. Train has been canceled`,
-                                error: e.toString(),
+                                errorMessage: e.toString(),
+                                error: e,
                                 containerName: train.manifest.containerName,
                                 eventId,
                             });

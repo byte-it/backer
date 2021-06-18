@@ -1,8 +1,9 @@
 import {ContainerInspectInfo} from 'dockerode';
 import {object} from 'dot-object';
+import * as md5File from 'md5-file';
 import {IMysqlLabels} from './BackupSource/BackupSourceMysql';
-import {ILabels} from './Interfaces';
 import {IBackupManifest, IBackupManifestStep} from './IBackupManifest';
+import {ILabels} from './Interfaces';
 
 /**
  * Extract the labels beginning with `backer` and convert the dotted keys to nested objects
@@ -100,4 +101,12 @@ export function getHostForContainer(network: string, container: ContainerInspect
  */
 export function getLastStep(manifest: IBackupManifest): IBackupManifestStep|null {
     return manifest.steps.length > 0 ? manifest.steps[manifest.steps.length - 1] : null;
+}
+
+/**
+ * Gets the md5 has of a file in base64 encoding
+ * @param file
+ */
+export async function getMd5(file: string): Promise<string> {
+    return md5File(file);
 }
