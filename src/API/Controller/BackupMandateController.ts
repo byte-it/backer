@@ -20,6 +20,9 @@ export class BackupMandateController extends BaseController {
         '/mandates/:id/backups': {
             get: this.backups,
         },
+        '/mandates/:id/backups/:manifest_id': {
+            get: this.showManifest,
+        },
     };
 
     private backupManager: BackupManager;
@@ -64,6 +67,25 @@ export class BackupMandateController extends BaseController {
         });
 
         response.status(200).send({data: backups});
+    }
+
+    public async showManifest(request: express.Request, response: express.Response): Promise<any> {
+        const mandate = this.backupManager.getBackup(request.params.id);
+        const manifestId = request.params.manifest_id;
+        if (!mandate) {
+            response.status(404).send({message: `Mandate for ${request.params.id} not found.`});
+            return;
+        }
+        const manifest = mandate.target.getAllBackups().find((value) => {
+            return value.uuid === manifestId;
+        });
+
+        if (!manifest) {
+            response.status(404).send({message: `Manifest for ${request.params.manifest_id} not found.`});
+            return;
+        }
+
+        response.status(200).send({data: manifest});
     }
 
     public async triggerBackup(request: express.Request, response: express.Response): Promise<any> {

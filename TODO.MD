@@ -24,6 +24,7 @@
 - [x] Static config for containers
 - [ ] Automated docker build
 - [x] Sentry Integration
+- [ ] Debug strange queue behaviour if to many jobs triggert
 
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests

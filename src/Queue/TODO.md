@@ -4,4 +4,5 @@
 - [x] Log Timestamps + Time
 - [x] Calc wait time
 - [ ] Detect overloaded queue
-- [ ] Permanent save failed jobs
+- [ ] Persistent failed jobs
+- [ ] Persistent stats

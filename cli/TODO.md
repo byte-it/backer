@@ -9,6 +9,8 @@
   - [ ] Mandates
     - [x] List
     - [x] Detail
+    - [x] List Backups
+    - [ ] Show Backup manifest
     - [x] Trigger (~~with wait~~)
     - [ ] Test Command
 

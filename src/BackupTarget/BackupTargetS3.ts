@@ -175,8 +175,9 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
                 Bucket: this._bucket,
                 Key: finalPath,
             }).promise();
-            const {ContentLength} = response;
+            const {ContentLength, ETag} = response;
 
+            manifest.md5 = ETag;
             manifest.path = finalPath;
             manifest.filesize = prettyBytes(ContentLength);
 
