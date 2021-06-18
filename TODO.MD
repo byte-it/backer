@@ -30,6 +30,8 @@
 - [x] Give backup manifest uuids via file hash or something
 - [x] Ensure manifest validity and integrity
 - [x] Add file sizes
+- [x] Keep content type in manifest per step
+- [ ] Differentiate between creation time meta and final meta  
 
 ### Testing
 - [ ] Unify file access for testing
