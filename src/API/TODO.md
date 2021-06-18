@@ -4,6 +4,7 @@
     - [x] Get all
     - [x] Get detail
     - [x] Get backups
+    - [ ] Get backup manifest
     - [x] Post trigger Backup
 - [x] Targets
     - [x] Get all
