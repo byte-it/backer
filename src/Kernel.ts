@@ -4,6 +4,7 @@ import {IConfig} from 'config';
 import * as config from 'config';
 import * as Dockerode from 'dockerode';
 import * as fs from 'fs';
+import {IPackageJson} from 'package-json-type';
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import * as winston from 'winston';
@@ -15,7 +16,21 @@ import {BackupTargetProvider} from './BackupTarget/BackupTargetProvider';
 import {Queue} from './Queue/Queue';
 
 export class Kernel {
-    public async bootstrap() {
+
+    private _runtime: {
+        promise?: Promise<number>,
+        resolve?: (value: number | PromiseLike<number>) => void,
+        reject?: (reason?: any) => void,
+    } = {};
+
+    constructor() {
+        this._runtime.promise = new Promise<number>((resolve, reject) => {
+            this._runtime.resolve = resolve;
+            this._runtime.reject = reject;
+        });
+    }
+
+    public async bootstrap(): Promise<number> {
 
         const signals = {
             SIGHUP: 1,
@@ -32,6 +47,7 @@ export class Kernel {
         }
 
         const npmPackage = JSON.parse(fs.readFileSync(Path.join(process.cwd(), '/package.json'), {encoding: 'utf-8'}));
+        container.registerInstance<IPackageJson>('package', npmPackage);
 
         Sentry.init(
             {
@@ -91,11 +107,14 @@ export class Kernel {
                 message: 'Bootstrap finished',
                 category: 'kernel',
             });
-            await container.resolve(Queue).start();
+
+            container.resolve(Queue).start();
+
+            return this._runtime.promise;
         } catch (e) {
             // Anything that escalates to here will be considered fatal
             Sentry.captureException(e);
-            return;
+            return 1;
         }
     }
 
@@ -113,6 +132,8 @@ export class Kernel {
         ]);
 
         container.resolve<Logger>('Logger').info(`Shutdown complete. Signal: ${signal}`);
+
+        this._runtime.resolve(0);
     }
 
 }
