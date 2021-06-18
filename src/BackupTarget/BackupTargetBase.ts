@@ -1,7 +1,6 @@
 import {existsSync, lstatSync, PathLike} from 'fs';
-import * as md5 from 'md5-file';
 import * as Path from 'path';
-import {inject} from 'tsyringe';
+import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {getIBackupTargetManifestSchema, IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
 import {getLastStep} from '../Util';
@@ -9,7 +8,7 @@ import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestInvalid} from './Exceptions/ManifestInvalid';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
-import {TmpStorage} from '../TmpStorage';
+import {IPackageJson} from 'package-json-type';
 
 /**
  * @category Target
@@ -48,6 +47,8 @@ export abstract class BackupTargetBase implements IBackupTarget {
             });
             throw new Error(`Target ${this._name} isn't writeable, init aborted. All mandates with this target will fail`);
         }
+
+        const version = container.resolve<IPackageJson>('package').version;
         try {
             this.manifest = await this.readManifestFromTarget();
 
@@ -56,8 +57,8 @@ export abstract class BackupTargetBase implements IBackupTarget {
             if (result.hasOwnProperty('error')) {
                 throw new ManifestInvalid(result.error.toString());
             }
-            if (this.manifest.version !== process.env.npm_package_version) {
-                this.manifest.version = process.env.npm_package_version;
+            if (this.manifest.version !== version) {
+                this.manifest.version = version;
             }
         } catch (e) {
             if (e instanceof ManifestNotFound || e instanceof ManifestInvalid) {
@@ -73,6 +74,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                     this.logger.log({
                         level: 'info',
                         message: `BackupTarget ${this.config.name}: The manifest of the configured target is invalid, a new one will be created`,
+                        validationMessage: e.message,
                         targetName: this.config.name,
                         targetType: this.config.type,
                     });
@@ -85,7 +87,7 @@ export abstract class BackupTargetBase implements IBackupTarget {
                         name: this.config.name,
                         type: this.config.type,
                     },
-                    version: process.env.npm_package_version,
+                    version: container.resolve<IPackageJson>('package').version,
                 };
 
             } else {

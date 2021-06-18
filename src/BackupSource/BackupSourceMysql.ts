@@ -3,14 +3,13 @@ import ProcessEnv = NodeJS.ProcessEnv;
 import {ContainerInspectInfo} from 'dockerode';
 import {promises as fs} from 'fs';
 import * as Joi from 'joi';
-import * as md5 from 'md5-file';
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
 import {ILabels} from '../Interfaces';
 import {TmpStorage} from '../TmpStorage';
-import {getConfigFromLabel, getHostForContainer} from '../Util';
+import {getConfigFromLabel, getHostForContainer, getMd5} from '../Util';
 import {ValidationError} from '../ValidationError';
 import {IBackupSource, IBackupSourceJSON} from './IBackupSource';
 
@@ -291,13 +290,14 @@ export class BackupSourceMysql implements IBackupSource {
                     if (error) {
                         reject(error);
                     } else {
-                        const md5Hash = await md5(tmpFile);
+                        const md5Hash = await getMd5(tmpFile);
                         const {size} = await fs.stat(tmpFile);
                         const step: IBackupManifestStep = {
                             processor: 'source.mysql',
                             fileName: tmpFileName,
                             uri: tmpFile,
                             md5: md5Hash,
+                            mime: 'text/plain',
                             filesize: size.toString(),
                         };
                         manifest.steps.push(step);

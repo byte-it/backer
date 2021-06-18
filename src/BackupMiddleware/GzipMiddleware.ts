@@ -1,10 +1,9 @@
 import {exec, ExecException} from 'child_process';
 import {promises as fs} from 'fs';
-import * as md5 from 'md5-file';
 import {IBackupManifest, IBackupManifestStep} from '../IBackupManifest';
-import {getLastStep} from '../Util';
-import {IBackupMiddleware} from './IBackupMiddleware';
 import {TmpStorage} from '../TmpStorage';
+import {getLastStep, getMd5} from '../Util';
+import {IBackupMiddleware} from './IBackupMiddleware';
 
 /**
  * Compresses the backup with gzip.
@@ -49,12 +48,13 @@ export class GzipMiddleware implements IBackupMiddleware {
                         reject(error);
                     } else {
                         const tmpFile = `${uri}${this.fileSuffix()}`;
-                        const md5Hash = await md5(tmpFile);
+                        const md5Hash = await getMd5(tmpFile);
                         const {size} = await fs.stat(tmpFile);
                         const step: IBackupManifestStep = {
                             processor: 'middleware.gzip',
                             fileName: `${fileName}${this.fileSuffix()}`,
                             uri: tmpFile,
+                            mime: 'application/gzip',
                             md5: md5Hash,
                             filesize: size.toString(),
                         };

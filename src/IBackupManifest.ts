@@ -22,6 +22,11 @@ export interface IBackupManifestStep {
     md5: string;
 
     /**
+     * The mime typ of the produced file
+     */
+    mime: string;
+
+    /**
      * The filesize in bytes
      */
     filesize: string;
@@ -40,6 +45,7 @@ export function getIBackupManifestStepSchema(): ObjectSchema {
         fileName: string().required(),
         uri: string().required(),
         md5: string().required(),
+        mime: string(),
         filesize: string(),
         optional: object(),
     });
@@ -54,7 +60,7 @@ export interface IBackupManifest {
      * Unique id for this manifest
      */
     uuid: string;
-    
+
     /**
      * The name of the backup it self defined by the used name pattern. The name excludes the file suffix.
      */
@@ -90,6 +96,11 @@ export interface IBackupManifest {
     md5?: string;
 
     /**
+     * The mime typ of the stored backup file
+     */
+    mime?: string;
+
+    /**
      * The final filesize on the target location in a human readable format
      */
     filesize: string;
@@ -104,6 +115,7 @@ export interface IBackupManifest {
 
 export function getIBackupManifestSchema(): ObjectSchema {
     return object().keys({
+        uuid: string().required(),
         name: string().required(),
         containerName: string().required(),
         sourceName: string().required(),

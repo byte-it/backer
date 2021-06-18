@@ -1,13 +1,12 @@
 import {constants, existsSync, promises as fs} from 'fs';
 import * as makeDir from 'make-dir';
-import * as md5 from 'md5-file';
 import * as moveFile from 'move-file';
 import * as Path from 'path';
 import * as prettyBytes from 'pretty-bytes';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
 import {IBackupManifest, IBackupTargetManifest} from '../IBackupManifest';
-import {getLastStep} from '../Util';
+import {getLastStep, getMd5} from '../Util';
 import {BackupTargetBase} from './BackupTargetBase';
 import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
@@ -146,7 +145,7 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
             await makeDir(containerPath);
         }
 
-        const md5Hash = await md5(tmpPath);
+        const md5Hash = await getMd5(tmpPath);
 
         await moveFile(tmpPath, finalTargetPath);
 

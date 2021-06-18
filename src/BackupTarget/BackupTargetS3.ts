@@ -159,19 +159,23 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     ): Promise<IBackupManifest> {
 
         const finalPath = `${manifest.containerName}/${name}`;
-        const {md5} = getLastStep(manifest);
+        const {md5, mime} = getLastStep(manifest);
+
         try {
-            await this._s3Client.putObject({
-                Body: fs.createReadStream(tmpPath),
+            const tmpStream = fs.createReadStream(tmpPath);
+            await this._s3Client.upload({
+                Body: tmpStream,
                 Bucket: this._bucket,
                 Key: finalPath,
-                ContentMD5: md5,
+                ContentMD5: Buffer.from(md5, 'hex').toString('base64'),
+                ContentType: mime,
             }).promise();
 
-            const {ContentLength} = await this._s3Client.headObject({
+            const response = await this._s3Client.headObject({
                 Bucket: this._bucket,
                 Key: finalPath,
             }).promise();
+            const {ContentLength} = response;
 
             manifest.path = finalPath;
             manifest.filesize = prettyBytes(ContentLength);
@@ -241,14 +245,15 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
                 Body: JSON.stringify(this.manifest),
                 Bucket: this._bucket,
                 Key: BackupTargetS3.manifestName,
-                ContentType: 'application/json; charset=utf-8',
+                ContentType: 'application/json',
+                ContentEncoding: 'utf-8',
             }).promise();
         } catch (e) {
             this.handleAWSError(e);
         }
     }
 
-    public toJSON(): IBackupTargetJSON & {s3: {bucket: string, endpoint: string}} {
+    public toJSON(): IBackupTargetJSON & { s3: { bucket: string, endpoint: string } } {
         return {
             name: this.name,
             type: this.type,
@@ -271,6 +276,8 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
                 throw new FilePermissionDenied();
             case 404:
                 throw new FileNotFound();
+            default:
+                throw e;
         }
     }
 }
