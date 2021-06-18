@@ -88,7 +88,7 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
         super(logger, config);
         this._bucket = config.bucket;
 
-        this._s3Client = s3Client == null ? new S3(config.s3Client) : s3Client;
+        this._s3Client = s3Client == null ? new S3({computeChecksums: true, ...config.s3Client}) : s3Client;
     }
 
     /**
@@ -167,7 +167,7 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
                 Body: tmpStream,
                 Bucket: this._bucket,
                 Key: finalPath,
-                ContentMD5: Buffer.from(md5, 'hex').toString('base64'),
+                // ContentMD5: Buffer.from(md5, 'hex').toString('base64'),
                 ContentType: mime,
             }).promise();
 
