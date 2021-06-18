@@ -1,6 +1,6 @@
 {
   "name": "backer",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": " A tool to backup multiple databases hosted in docker container to s3/minio",
   "repository": "git@github.com:byte-it/backer.git",
   "readme": "README.md",
