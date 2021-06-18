@@ -1,3 +1,4 @@
-tmpPath: '/var/tmp/backer'
+tmpPath: './.tmp/tmp'
+storagePath: './.tmp/storage'
 socketPath: '/var/run/docker.sock'
 targets: []

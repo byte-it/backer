@@ -4,6 +4,9 @@
 
 import * as Sentry from '@sentry/node';
 import * as config from 'config';
+import * as fs from 'fs';
+import {IPackageJson} from 'package-json-type';
+import * as Path from 'path';
 import {container} from 'tsyringe';
 import {createLogger, Logger, transports} from 'winston';
 
@@ -23,8 +26,12 @@ export const mochaHooks = {
         }));
 
         container.registerInstance('Config', config);
+
+        const npmPackage = JSON.parse(fs.readFileSync(Path.join(process.cwd(), 'package.json'), {encoding: 'utf-8'}));
+        container.registerInstance<IPackageJson>('package', npmPackage);
+
         Sentry.init({
-            environment: 'testing'
+            environment: 'testing',
         });
     },
 

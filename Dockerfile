@@ -3,6 +3,9 @@ FROM node:14
 RUN apt-get update \
     && apt-get install -y mysql-client ccrypt
 
+RUN mkdir /data
+VOLUME /data
+
 RUN mkdir -p /var/tmp/backer && mkdir -p /var/opt/backer/local
 
 RUN echo '#!/bin/bash\n/usr/app/cli/bin/run $@' > /usr/bin/backer && \

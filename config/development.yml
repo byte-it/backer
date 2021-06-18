@@ -1,4 +1,5 @@
-tmpPath: './tmp/'
+tmpPath: './.tmp/tmp'
+storagePath: './.tmp/storage'
 targets:
 - name: 'default'
   type: 'local'

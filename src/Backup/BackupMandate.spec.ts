@@ -1,20 +1,21 @@
 import {expect} from 'chai';
-import {IConfig} from 'config';
 import {mkdirSync} from 'fs';
+import {DateTime} from 'luxon';
 import * as Path from 'path';
 import {container} from 'tsyringe';
 import {Logger} from 'winston';
+import {IBackupSourceJSON} from '../BackupSource/IBackupSource';
 import {BackupTargetLocal} from '../BackupTarget/BackupTargetLocal';
 import {BackupTargetProvider} from '../BackupTarget/BackupTargetProvider';
-import {BackupMandate} from './BackupMandate';
-import {DateTime} from 'luxon';
-import {Queue} from '../Queue/Queue';
-import {IBackupManifest} from '../IBackupManifest';
 import {IBackupTargetJSON} from '../BackupTarget/IBackupTarget';
-import {IBackupSourceJSON} from '../BackupSource/IBackupSource';
+import {IBackupManifest} from '../IBackupManifest';
+import {Queue} from '../Queue/Queue';
+import {BackupMandate} from './BackupMandate';
+
+const targetPath = Path.join(process.cwd(), '.tmp/test/targets/local');
 
 beforeEach(async () => {
-    mkdirSync(Path.join(process.cwd(), '.tmp/targets/local'), {recursive: true});
+    mkdirSync(targetPath, {recursive: true});
     await container.resolve<BackupTargetProvider>(BackupTargetProvider).init();
 
 });
@@ -24,7 +25,7 @@ describe('BackupMandate', () => {
             container.registerInstance('target.default', await BackupTargetLocal.createInstance({
                 name: 'test',
                 type: 'local',
-                dir: Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/targets/default'),
+                dir: targetPath,
             }));
             // @ts-ignore
             const testContainer = {
@@ -66,7 +67,7 @@ describe('BackupMandate', () => {
             container.registerInstance('target.default', await BackupTargetLocal.createInstance({
                 name: 'test',
                 type: 'local',
-                dir: Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/targets/default'),
+                dir: targetPath,
             }));
             const testContainer = {
                 Config: {
@@ -198,8 +199,8 @@ describe('BackupMandate', () => {
                 {
                     toJSON(): IBackupTargetJSON {
                         // @ts-ignore
-                        return {}
-                    }
+                        return {};
+                    },
                 }, '0 0 * * *', '0', pattern);
             const expectedName = `${date.toFormat('yyyyMMdd-HH-mm')}-${containerName}`;
             expect(backup.createName(date)).to.equal(expectedName);
@@ -239,8 +240,8 @@ describe('BackupMandate', () => {
                 {
                     toJSON(): IBackupTargetJSON {
                         // @ts-ignore
-                        return {}
-                    }
+                        return {};
+                    },
                 },
                 '0 0 * * *',
                 2,
@@ -262,13 +263,11 @@ describe('BackupMandate', () => {
 
             expect(toDelete).to.be.an('array').that.is.empty;
 
-
             await backup.stop();
         });
 
         it('should not return manifest if there are exact as much backups as the retention says', async () => {
             const backup = createMandate();
-
 
             // @ts-ignore
             const toDelete = backup.calculateRetention([
@@ -277,15 +276,15 @@ describe('BackupMandate', () => {
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200101-00-00',
-                    steps: []
+                    steps: [],
                 },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
-                    steps: []
-                }
+                    steps: [],
+                },
             ]);
 
             expect(toDelete).to.be.an('array').that.is.empty;
@@ -355,7 +354,6 @@ describe('BackupMandate', () => {
 
             expect(toDelete).to.have.members([manifests[0]]);
 
-
             await backup.stop();
         });
 
@@ -367,28 +365,28 @@ describe('BackupMandate', () => {
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200101-00-00',
-                    steps: []
+                    steps: [],
                 },
                 {
                     name: '2',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200102-00-00',
-                    steps: []
+                    steps: [],
                 },
                 {
                     name: '3',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200103-00-00',
-                    steps: []
+                    steps: [],
                 },
                 {
                     name: '4',
                     containerName: 'test',
                     sourceName: 'test',
                     date: '20200104-00-00',
-                    steps: []
+                    steps: [],
                 },
             ];
             const toDelete = backup.calculateRetention(manifests);

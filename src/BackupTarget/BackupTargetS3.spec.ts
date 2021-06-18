@@ -13,8 +13,10 @@ import {FilePermissionDenied} from './Exceptions/FilePermissionDenied';
 
 use(chaiAsPromised);
 
+const targetPath = Path.join(process.cwd(), '.tmp/test/targets/s3');
+
 beforeEach(() => {
-    fs.mkdirSync(Path.join(container.resolve<IConfig>('Config').get('tmpPath'), 's3'), {recursive: true});
+    fs.mkdirSync(targetPath, {recursive: true});
 });
 afterEach(() => {
     // rimraf.sync(container.resolve<IConfig>('Config').get('tmpPath'));
@@ -233,6 +235,9 @@ describe('BackupTargetS3', () => {
         };
 
         it('should write the given file to the bucket', async () => {
+            AWSMock.mock('S3', 'upload', (params, callback) => {
+                callback(null, {});
+            });
             AWSMock.mock('S3', 'putObject', (params, callback) => {
                 callback(null, {});
             });
@@ -244,21 +249,24 @@ describe('BackupTargetS3', () => {
             const s3Client = new AWS.S3({});
 
             const instance = new BackupTargetS3(container.resolve('Logger'), targetConf, s3Client);
-            const tmpPath = Path.join(container.resolve<IConfig>('Config').get('tmpPath'), '/s3/empty');
+            const tmpPath = Path.join(targetPath, 'empty');
             fs.writeFileSync(tmpPath, 'test');
 
             const manifest: IBackupManifest = {
+                uuid: '1',
                 name: 'test',
                 containerName: 'test',
                 date: '',
                 sourceName: '',
                 filesize: null,
+                mime: 'text/plain',
                 steps: [{
                     processor: 'test',
                     uri: tmpPath,
                     fileName: Path.basename(tmpPath),
                     md5: 'd41d8cd98f00b204e9800998ecf8427e',
                     filesize: '0',
+                    mime: 'text/plain',
                 }],
             };
 

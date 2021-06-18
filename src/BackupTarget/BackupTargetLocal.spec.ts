@@ -11,8 +11,9 @@ import {FileNotWriteable} from './Exceptions/FileNotWriteable';
 
 use(chaiAsPromised);
 
-const testConfig = {type: 'local', name: 'test', dir: './tmp/test/targets/test'};
+const testConfig = {type: 'local', name: 'test', dir: './.tmp/test/targets/test'};
 const testTargetPath = Path.join(process.cwd(), testConfig.dir);
+
 beforeEach(() => {
     fs.mkdirSync(testTargetPath, {recursive: true});
 });
@@ -35,7 +36,7 @@ describe('BackupTargetLocal', () => {
                 const target = new BackupTargetLocal(container.resolve('Logger'), {
                     type: 'local',
                     name: 'test',
-                    dir: './tmp/test/targets/test',
+                    dir: './.tmp/test/targets/test',
                 });
                 expect(target.backupDir).to.equal(testTargetPath);
             });

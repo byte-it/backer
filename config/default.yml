@@ -1,4 +1,5 @@
 tmpPath: '/var/tmp/backer'
+storagePath: '/data'
 defaultTarget: 'local'
 socketPath: '/var/run/docker.sock'
 logLevel: 'info'
