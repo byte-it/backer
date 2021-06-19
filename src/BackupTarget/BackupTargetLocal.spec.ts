@@ -51,7 +51,7 @@ describe('BackupTargetLocal', () => {
                 await target.init();
                 const readManifest = JSON.parse(fs.readFileSync(Path.join(testTargetPath, 'manifest.json'), {encoding: 'utf-8'}));
 
-                expect(readManifest).to.deep.equal(target.getManifest());
+                expect(readManifest).to.deep.equal(target.manifest);
             });
 
         });
@@ -111,7 +111,7 @@ describe('BackupTargetLocal', () => {
 
         it('should add the backup to the manifest', async () => {
             const {target} = await createBackup();
-            const manifest = target.getManifest();
+            const manifest = target.manifest;
 
             // tslint:disable-next-line:no-unused-expression
             expect(manifest.backups).to.be.an('array').that.is.not.empty;
@@ -119,7 +119,7 @@ describe('BackupTargetLocal', () => {
 
         it('should use the relative path in the manifest', async () => {
             const {target} = await createBackup();
-            const manifest = target.getManifest();
+            const manifest = target.manifest;
 
             expect(manifest.backups[0].path).to.equal('test/empty');
         });
@@ -128,12 +128,12 @@ describe('BackupTargetLocal', () => {
             const {target} = await createBackup();
             const readManifest = JSON.parse(fs.readFileSync(Path.join(testTargetPath, 'manifest.json'), {encoding: 'utf-8'}));
 
-            expect(readManifest).to.deep.equal(target.getManifest());
+            expect(readManifest).to.deep.equal(target.manifest);
         });
 
         it('should add the backup to the manifest', async () => {
             const {target} = await createBackup();
-            const manifest = target.getManifest();
+            const manifest = target.manifest;
 
             // tslint:disable-next-line:no-unused-expression
             expect(manifest.backups).to.be.an('array').that.is.not.empty;

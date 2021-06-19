@@ -57,11 +57,6 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
     private readonly _backupDir: string;
 
     /**
-     * @private The manifest managed by this target instance
-     */
-    private _manifest: IBackupTargetManifest;
-
-    /**
      * @constructor
      * @param {winston.logger} logger The logger instance.
      * @param {IBackupTargetLocalConfig} config
@@ -191,7 +186,7 @@ export class BackupTargetLocal extends BackupTargetBase implements IBackupTarget
      * @inheritDoc
      */
     protected async writeManifestToTarget(): Promise<void> {
-        await fs.writeFile(Path.join(this._backupDir, 'manifest.json'), JSON.stringify(this.manifest), {flag: 'w+'});
+        await fs.writeFile(Path.join(this._backupDir, 'manifest.json'), JSON.stringify(this.getManifest()), {flag: 'w+'});
     }
 
 }

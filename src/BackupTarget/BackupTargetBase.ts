@@ -1,4 +1,6 @@
+import {Mutex} from 'async-mutex';
 import {existsSync, lstatSync, PathLike} from 'fs';
+import {IPackageJson} from 'package-json-type';
 import * as Path from 'path';
 import {container, inject} from 'tsyringe';
 import {Logger} from 'winston';
@@ -8,12 +10,23 @@ import {FileNotFound} from './Exceptions/FileNotFound';
 import {ManifestInvalid} from './Exceptions/ManifestInvalid';
 import {ManifestNotFound} from './Exceptions/ManifestNotFound';
 import {IBackupTarget, IBackupTargetConfig, IBackupTargetJSON} from './IBackupTarget';
-import {IPackageJson} from 'package-json-type';
 
 /**
  * @category Target
  */
 export abstract class BackupTargetBase implements IBackupTarget {
+    private get manifest(): IBackupTargetManifest {
+        return this._manifest;
+    }
+
+    private set manifest(manifest: IBackupTargetManifest) {
+        if (this._manifest === null) {
+            this._manifest = manifest;
+        } else {
+            throw new Error('The manifest can only be set once');
+        }
+    }
+
     get type(): string {
         return this._type;
     }
@@ -26,11 +39,13 @@ export abstract class BackupTargetBase implements IBackupTarget {
 
     protected _name: string;
     protected _type: string;
+    protected _manifestMutex: Mutex;
 
-    protected manifest: IBackupTargetManifest;
+    private _manifest: IBackupTargetManifest = null;
 
     protected constructor(@inject('logger') protected logger: Logger, protected config: IBackupTargetConfig) {
         this._name = config.name;
+        this._manifestMutex = new Mutex();
     }
 
     /**
@@ -49,53 +64,57 @@ export abstract class BackupTargetBase implements IBackupTarget {
         }
 
         const version = container.resolve<IPackageJson>('package').version;
-        try {
-            this.manifest = await this.readManifestFromTarget();
 
-            const result = getIBackupTargetManifestSchema().validate(this.manifest);
+        await this._manifestMutex.runExclusive(async () => {
+            try {
+                const manifest = await this.readManifestFromTarget();
 
-            if (result.hasOwnProperty('error')) {
-                throw new ManifestInvalid(result.error.toString());
-            }
-            if (this.manifest.version !== version) {
-                this.manifest.version = version;
-            }
-        } catch (e) {
-            if (e instanceof ManifestNotFound || e instanceof ManifestInvalid) {
+                const result = getIBackupTargetManifestSchema().validate(manifest);
 
-                if (e instanceof ManifestNotFound) {
-                    this.logger.log({
-                        level: 'info',
-                        message: `BackupTarget ${this.config.name}: The configured target doesn't include a manifest file, a new one will be created`,
-                        targetName: this.config.name,
-                        targetType: this.config.type,
-                    });
-                } else if (e instanceof ManifestInvalid) {
-                    this.logger.log({
-                        level: 'info',
-                        message: `BackupTarget ${this.config.name}: The manifest of the configured target is invalid, a new one will be created`,
-                        validationMessage: e.message,
-                        targetName: this.config.name,
-                        targetType: this.config.type,
-                    });
+                if (result.hasOwnProperty('error')) {
+                    throw new ManifestInvalid(result.error.toString());
                 }
+                if (manifest.version !== version) {
+                    manifest.version = version;
+                }
+                this.manifest = manifest;
+            } catch (e) {
+                if (e instanceof ManifestNotFound || e instanceof ManifestInvalid) {
 
-                // Create a new manifest
-                this.manifest = {
-                    backups: [],
-                    target: {
-                        name: this.config.name,
-                        type: this.config.type,
-                    },
-                    version: container.resolve<IPackageJson>('package').version,
-                };
+                    if (e instanceof ManifestNotFound) {
+                        this.logger.log({
+                            level: 'info',
+                            message: `BackupTarget ${this.config.name}: The configured target doesn't include a manifest file, a new one will be created`,
+                            targetName: this.config.name,
+                            targetType: this.config.type,
+                        });
+                    } else if (e instanceof ManifestInvalid) {
+                        this.logger.log({
+                            level: 'info',
+                            message: `BackupTarget ${this.config.name}: The manifest of the configured target is invalid, a new one will be created`,
+                            validationMessage: e.message,
+                            targetName: this.config.name,
+                            targetType: this.config.type,
+                        });
+                    }
 
-            } else {
-                this.logger.error(e.message);
+                    // Create a new manifest
+                    this.manifest = {
+                        backups: [],
+                        target: {
+                            name: this.config.name,
+                            type: this.config.type,
+                        },
+                        version: container.resolve<IPackageJson>('package').version,
+                    };
+
+                } else {
+                    this.logger.error(e.message);
+                    throw e;
+                }
             }
-        }
-        await this.writeManifestToTarget();
-
+            await this.writeManifestToTarget();
+        });
     }
 
     /**
@@ -110,9 +129,10 @@ export abstract class BackupTargetBase implements IBackupTarget {
         }
 
         await this.moveBackupToTarget(uri, Path.basename(uri), manifest);
-
-        this.manifest.backups.push(manifest);
-        await this.writeManifestToTarget();
+        await this._manifestMutex.runExclusive(async () => {
+            this.manifest.backups.push(manifest);
+            await this.writeManifestToTarget();
+        });
     }
 
     /**

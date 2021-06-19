@@ -41,7 +41,6 @@ export interface IBackupTargetJSON {
  * @category BackupTarget
  */
 export interface IBackupTarget extends IProvideable, IJsonable {
-
     /**
      * Initializes the target. The constructor only assigns the config. This allows the init method to perform async
      * operations up on start, like reading the manifest and validating that it can write to the target implementation.

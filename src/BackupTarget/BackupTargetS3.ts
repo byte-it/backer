@@ -243,7 +243,7 @@ export class BackupTargetS3 extends BackupTargetBase implements IBackupTarget {
     public async writeManifestToTarget(): Promise<void> {
         try {
             await this._s3Client.putObject({
-                Body: JSON.stringify(this.manifest),
+                Body: JSON.stringify(this.getManifest()),
                 Bucket: this._bucket,
                 Key: BackupTargetS3.manifestName,
                 ContentType: 'application/json',

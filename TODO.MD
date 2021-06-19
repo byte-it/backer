@@ -27,9 +27,9 @@
 - [ ] Debug strange queue behaviour if to many jobs triggert
 - [ ] Properly build cli in container
 - [ ] Use Mutex for all situations with race conditions
-    - [ ] manifest writes/reads
+    - [x] manifest writes/reads
     - [ ] Locks per container to prevent simultaneously reading
-    
+- [ ] Immutability for manifests and other object
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
 - [x] Give backup manifest uuids via file hash or something
