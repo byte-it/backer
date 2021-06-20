@@ -1,3 +1,4 @@
+import {Mutex} from 'async-mutex';
 import {exec, ExecException} from 'child_process';
 import ProcessEnv = NodeJS.ProcessEnv;
 import {ContainerInspectInfo} from 'dockerode';
@@ -170,6 +171,8 @@ export class BackupSourceMysql implements IBackupSource {
     private readonly _includeTablesList?: string[];
     private readonly _ignoreDataList?: string[];
 
+    private readonly _mutex: Mutex;
+
     /**
      * @param name The name for this backup instance (e.g. the container name)
      * @param dbHost The host (e.g IP-address of the host)
@@ -212,6 +215,8 @@ export class BackupSourceMysql implements IBackupSource {
         if (!(Array.isArray(ignoreTablesList) && ignoreTablesList.length > 0)) {
             this._includeTablesList = includeTablesList;
         }
+
+        this._mutex = new Mutex();
     }
 
     /**
@@ -282,29 +287,31 @@ export class BackupSourceMysql implements IBackupSource {
     public async backup(manifest: IBackupManifest, tmp: TmpStorage): Promise<IBackupManifest> {
         const tmpPath = await tmp.getPath();
         const {cmd, env, tmpFile, tmpFileName} = this.createDumpCmd(manifest.name, tmpPath);
-        return new Promise<IBackupManifest>((resolve, reject) => {
-            exec(
-                cmd,
-                {env},
-                async (error?: ExecException) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        const md5Hash = await getMd5(tmpFile);
-                        const {size} = await fs.stat(tmpFile);
-                        const step: IBackupManifestStep = {
-                            processor: 'source.mysql',
-                            fileName: tmpFileName,
-                            uri: tmpFile,
-                            md5: md5Hash,
-                            mime: 'text/plain',
-                            filesize: size.toString(),
-                        };
-                        manifest.steps.push(step);
-                        resolve(manifest);
-                    }
-                },
-            );
+        return this._mutex.runExclusive((): Promise<IBackupManifest> => {
+            return new Promise<IBackupManifest>((resolve, reject) => {
+                exec(
+                    cmd,
+                    {env},
+                    async (error?: ExecException) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            const md5Hash = await getMd5(tmpFile);
+                            const {size} = await fs.stat(tmpFile);
+                            const step: IBackupManifestStep = {
+                                processor: 'source.mysql',
+                                fileName: tmpFileName,
+                                uri: tmpFile,
+                                md5: md5Hash,
+                                mime: 'text/plain',
+                                filesize: size.toString(),
+                            };
+                            manifest.steps.push(step);
+                            resolve(manifest);
+                        }
+                    },
+                );
+            });
         });
     }
 

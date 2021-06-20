@@ -28,7 +28,7 @@
 - [ ] Properly build cli in container
 - [ ] Use Mutex for all situations with race conditions
     - [x] manifest writes/reads
-    - [ ] Locks per container to prevent simultaneously reading
+    - [x] Locks per container to prevent simultaneously reading
 - [ ] Immutability for manifests and other object
 ### Manifest Housekeeping
 - [x] Keep backer versions in manifests
@@ -55,7 +55,6 @@
 - [ ] Notification via Services (Mail/Slack/etc .. )
 - [ ] S3 Target Path prefix
 - [ ] More complex retention schedules
-- [ ] Implement queue locking per source
 
 ## Nice to have
 - [ ] Web Interface (vue + tailwind)
