@@ -25,7 +25,7 @@
 - [ ] Automated docker build
 - [x] Sentry Integration
 - [ ] Debug strange queue behaviour if to many jobs triggert
-- [ ] Properly build cli in container
+- [x] Properly build cli in container
 - [ ] Use Mutex for all situations with race conditions
     - [x] manifest writes/reads
     - [x] Locks per container to prevent simultaneously reading
