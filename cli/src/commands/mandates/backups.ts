@@ -1,7 +1,6 @@
+import {IBackupManifest} from 'backer';
 import {cli} from 'cli-ux';
 import got from 'got';
-// @ts-ignore
-import {IBackupManifest} from '../../../../src/IBackupManifest';
 import {BaseCommand} from '../../BaseCommand';
 
 export default class MandatesBackups extends BaseCommand {

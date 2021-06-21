@@ -1,6 +1,6 @@
+import {IBackupMandateJSON} from 'backer';
 import {cli} from 'cli-ux';
 import got from 'got';
-import {IBackupMandateJSON} from '../../../../src/Backup/BackupMandate';
 import {BaseCommand} from '../../BaseCommand';
 
 export default class Index extends BaseCommand {

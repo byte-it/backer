@@ -1,8 +1,9 @@
 #TODO
 
 - [x] Make Socket/HTTP Configurable
-- [ ] Use types form main app (Fix TS error by using main app as package or something)
+- [x] Use types form main app (Fix TS error by using main app as package or something)
 - [ ] Generic handling for stuff
+- [ ] More consistent output/usage
 
 - [x] Refactor to topics
 - [ ] Commands

@@ -1,7 +1,6 @@
+import {IJobTrainJSON} from 'backer';
 import {cli} from 'cli-ux';
 import got from 'got';
-// @ts-ignore
-import {IJobTrainJSON} from '../../../../src/Queue/JobTrain';
 import {BaseCommand} from '../../BaseCommand';
 
 export default class QueueTrains extends BaseCommand {

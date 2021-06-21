@@ -1,7 +1,6 @@
 import {flags} from '@oclif/command';
+import {IBackupManifest} from 'backer';
 import got from 'got';
-// @ts-ignore
-import {IBackupManifest} from '../../../../src/IBackupManifest';
 import {BaseCommand} from '../../BaseCommand';
 
 export default class MandatesTrigger extends BaseCommand {

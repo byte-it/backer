@@ -7,3 +7,8 @@ kernel.bootstrap().then((exitCode) => {
 }).catch((err) => {
     process.exit(1);
 });
+
+// Export needed interfaces for subpackages
+export * from './IBackupManifest';
+export {IBackupMandateJSON} from './Backup/BackupMandate';
+export {IJobTrainJSON} from './Queue/JobTrain';

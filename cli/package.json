@@ -1,5 +1,5 @@
 {
-  "name": "cli",
+  "name": "backer-cli",
   "version": "0.0.0",
   "author": "johanneskees",
   "bin": {
@@ -13,11 +13,13 @@
     "@sentry/node": "^6.5.1",
     "@sentry/tracing": "^6.5.1",
     "@sentry/types": "^6.5.1",
+    "backer": "file:../",
     "body-parser": "^1.19.0",
     "cli-ux": "^5.5.1",
     "tslib": "^1.14.1"
   },
   "devDependencies": {
+    "@oclif/dev-cli": "^1.26.0",
     "typescript": "^4.2.4"
   },
   "engines": {

@@ -44,6 +44,7 @@
 
 ### low prio
 - [ ] Docs with Slate
+- [ ] Use lerna to manage packages
 
 ## Realy Nice to have
 - [ ] Improved queue parallelization and concurrence
