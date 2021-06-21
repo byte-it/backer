@@ -15,11 +15,13 @@ WORKDIR /usr/app
 
 COPY package*.json ./
 
-RUN npm install
+COPY cli/package*.json ./cli/
+
+RUN npm install && cd cli && npm install && cd ..
 
 COPY . .
 
-RUN npm run-script build
+RUN npm run-script build && cd cli && npm run-script prepack && cd ..
 
 EXPOSE 8080
 
